@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 # Validate required environment variables
 : "${DB_HOST:?Environment variable DB_HOST is required}"
@@ -14,22 +15,6 @@ until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -q; do
 done
 echo "Database is ready!"
 
-# Run Atlas migrations with explicit database URL
-echo "Running Atlas migrations..."
-SSL_MODE="require"
-if [ "$PROJECT_ENV" = "development" ]; then
-  SSL_MODE="disable"
-fi
-
-atlas migrate apply \
-  --dir "file://migrations" \
-  --url "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=$SSL_MODE"
-
-# Check if migrations succeeded
-# Get exit status of last command
-if [ $? -eq 0 ]; then
-  echo "Atlas migrations completed successfully!"
-else
-  echo "Atlas migrations failed!"
-  exit 1
-fi
+# Start the main application
+echo "Starting server on port ${PORT:-8080}..."
+exec ./server

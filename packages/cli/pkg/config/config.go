@@ -16,7 +16,7 @@ type Config struct {
 
 // Default configuration values
 const (
-	DefaultAPIURL = "http://localhost:3000/api/v1"
+	DefaultAPIURL = "http://localhost:8080/api/v1"
 )
 
 // Initializes the configuration

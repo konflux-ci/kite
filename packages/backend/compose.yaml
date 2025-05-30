@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: deployments/local/Containerfile.development
     ports:
-      - "3000:3000"
+      - "8080:8080"
     volumes:
       # Mount source code for hot reloading
       - ./:/opt/app-root/src:Z

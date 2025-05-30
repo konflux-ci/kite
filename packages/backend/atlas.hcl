@@ -14,6 +14,11 @@ data "external_schema" "gorm" {
   ]
 }
 
+variable "database_url" {
+  type    = string
+  default = getenv("DATABASE_URL")
+}
+
 # data.external_schema.gorm -> Run the program above to get schema info
 # data.external_schema.gorm.url -> The schema definition the program produced
 env "local" {
@@ -22,7 +27,7 @@ env "local" {
   # doc: https://atlasgo.io/concepts/dev-database
   dev = "docker://postgres/13/dev?search_path=public"
   # URL to local, actual DB
-  url = getenv("DATABASE_URL")
+  url = var.database_url
   migration {
     dir = "file://migrations"
   }
@@ -35,7 +40,7 @@ env "local" {
 
 env "production" {
   src = data.external_schema.gorm.url
-  url = getenv("DATABASE_URL")
+  url = var.database_url
   migration {
     dir = "file://migrations"
   }

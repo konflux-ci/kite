@@ -48,7 +48,7 @@ konflux-issues list -n team-alpha -s critical
 konflux-issues details -i <id> -n team-alpha
 
 # Configure the API URL
-konflux-issues config set-api-url http://localhost:3000/api/v1
+konflux-issues config set-api-url http://localhost:8080/api/v1
 
 # Show current configuration
 konflux-issues config
@@ -97,7 +97,7 @@ The CLI uses a configuration file stored at `~/.konflux-issues/config.yaml`. You
 
 Default configuration:
 ```yaml
-api_url: http://localhost:3000/api/v1
+api_url: http://localhost:8080/api/v1
 ```
 
 You can also set the API URL using the `KONFLUX_API_URL` environment variable.
