@@ -70,6 +70,9 @@ ENV TZ=UTC \
     PROJECT_ENV=production \
     PORT=8080
 
+# Set non-root user
+USER 1001
+
 # Openshift convention, use port 8080
 EXPOSE 8080
 
