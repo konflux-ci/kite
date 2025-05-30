@@ -66,8 +66,7 @@ COPY scripts/deploy/prod.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh && \
     chmod -R g=u /opt/app-root/src
 
-ENV TZ=UTC \
-    PROJECT_ENV=production \
+ENV PROJECT_ENV=production \
     PORT=8080
 
 # Set non-root user

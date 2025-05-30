@@ -22,7 +22,6 @@ COPY migrations/ ./migrations/
 COPY scripts/init.sh entrypoint.sh
 RUN chmod -R g=u . && \
     chmod +x entrypoint.sh
-ENV TZ=UTC
 
 # Set non-root user
 USER 1001
