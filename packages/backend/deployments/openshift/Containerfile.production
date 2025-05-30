@@ -1,0 +1,81 @@
+# Build stage - use go toolset
+FROM registry.redhat.io/rhel9/go-toolset@sha256:e0ad156b08e0b50ad509d79513e13e8a31f2812c66e9c48c98cea53420ec2bca AS builder
+
+# Metadata
+LABEL io.k8s.description="Konflux Issues API Server" \
+      io.k8s.display-name="Konflux Issues API" \
+      io.openshift.expose-services="8080:http" \
+      io.openshift.tags="konflux,issues,api,golang" \
+      org.opencontainers.image.source="https://github.com/konflux-ci/kite" \
+      org.opencontainers.image.version="v1.0.0" \
+      maintainer="CUE Team"
+
+# Root user to install dependencies
+USER root
+RUN dnf install -y git && dnf clean all
+
+WORKDIR /build
+
+COPY go.mod go.sum ./
+# Download dependencies to local cache
+RUN go mod download
+
+COPY . .
+
+# Build static binary with maximum optimization
+#
+# CGO_ENABLED=0: Turn off C-Go integration.
+# This allows the app to
+# - be a self-contained binary that doesn't need external C libraries
+# - work on any linux system
+# - be used in a small, portable container
+#
+# GOOS=linux: sets the target OS (Linux)
+#
+# -a: Force rebuilds all packages
+#
+# -ldflags: passes flags to the linker to make smaller binaries
+# -s: remove symbol table
+# -extldflags 'static': Tell the external linker to make a fully static binary -> no dependencies on shared libraries
+#
+# -tags: only use parts of the code that are labeled with these tags
+# netgo:
+# - use the Go implementation of networking (instead of the C-based one).
+# - helps create a static binary without relying on system libraries, making it smaller and portable.
+#
+# osusergo:
+# - use the pure Go version of user lookup (instead of the C-based one)
+# - helps create a static binary without relying on system libraries, making it smaller and portable.
+#
+# -mod=mod: Ignore local vendor directory (if any)
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a -ldflags="-s -extldflags '-static'" \
+    -tags netgo,osusergo \
+    -mod=mod \
+    -o server cmd/server/main.go
+
+# Runtime stage - absolute minimal RHEL
+FROM registry.redhat.io/ubi9/ubi-micro@sha256:955512628a9104d74f7b3b0a91db27a6bbecdd6a1975ce0f1b2658d3cd060b98
+
+WORKDIR /opt/app-root/src
+
+# Copy only what's needed
+COPY --from=builder /build/server .
+COPY scripts/deploy/prod.sh ./entrypoint.sh
+
+RUN chmod +x entrypoint.sh && \
+    chmod -R g=u /opt/app-root/src
+
+ENV PROJECT_ENV=production \
+    PORT=8080
+
+# Set non-root user
+USER 1001
+
+# Openshift convention, use port 8080
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
+
+ENTRYPOINT ["./entrypoint.sh"]

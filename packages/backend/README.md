@@ -59,5 +59,14 @@ This is used by the service to talk to the cluster, allowing it to perform actio
 
 ### 5. Access the Application
 
-- API: http://localhost:3000/health
+- API: http://localhost:8080/health
 
+
+## Migrations
+
+Migration operations can be done using the `Makefile`.
+
+Make sure you export the ENV variables in `.env.development`:
+```bash
+export $(grep -v '^#' .env.development | xargs)
+```

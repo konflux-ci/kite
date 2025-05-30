@@ -54,7 +54,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Host:            GetEnvOrDefault("HOST", "0.0.0.0"),
-			Port:            getEnvOrDefault("PORT", "3000"),
+			Port:            getEnvOrDefault("PORT", "8080"),
 			ReadTimeout:     GetEnvDurationOrDefault("READ_TIMEOUT", 30*time.Second),
 			WriteTimeout:    GetEnvDurationOrDefault("WRITE_TIMEOUT", 39*time.Second),
 			IdleTimeout:     GetEnvDurationOrDefault("IDLE_TIMEOUT", 60*time.Second),

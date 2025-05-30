@@ -3,7 +3,7 @@ FROM registry.redhat.io/ubi9/ubi-minimal@sha256:92b1d5747a93608b6adb64dfd54515c3
 
 USER root
 
-RUN microdnf install -y nc && \
+RUN microdnf install -y postgresql && \
     curl -sSf https://atlasgo.sh | sh && \
     microdnf clean all && \
     rm -rf /var/cache/yum
@@ -15,9 +15,9 @@ COPY --chown=1001:1001 atlas.hcl .
 COPY --chown=1001:1001 migrations/ ./migrations/
 
 # Entrypoint script
-COPY --chown=1001:1001 scripts/deploy/init.sh .
-RUN chmod +x init.sh
+COPY --chown=1001:1001 scripts/deploy/init.sh entrypoint.sh
+RUN chmod +x entrypoint.sh
 
 USER 1001
 
-ENTRYPOINT [ "./init.sh" ]
+ENTRYPOINT [ "./entrypoint.sh" ]
