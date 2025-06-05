@@ -1,0 +1,16 @@
+name: Run Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-verson: '1.23'
+
+      - name: Test Backend
+        run: |
+          cd packages/backend
+          go test -v ./internal/...
