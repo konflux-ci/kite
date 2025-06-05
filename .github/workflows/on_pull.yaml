@@ -21,12 +21,10 @@ jobs:
 
       - name: Lint
         run: |
-          cd packages/backend
           go vet ./...
 
       - name: Format check
         run: |
-          cd packages/backend
           # Check if any files need formatting
           FILES=$(gofmt l .)
           # Print any files needing formatting
@@ -38,16 +36,13 @@ jobs:
 
       - name: Build
         run: |
-          cd packages/backend
           go build ./...
 
       - name: Install binary
         run: |
-          cd packages/backend
           go install ./...
 
       - name: Test Backend
         run: |
-          cd packages/backend
           go test -v ./internal/...
 
