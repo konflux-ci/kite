@@ -7,8 +7,15 @@ USER root
 RUN dnf install -y git postgresql && \
     dnf clean all
 
+# Get Atlas, verify, install
+RUN curl -L -o atlas https://release.ariga.io/atlas/atlas-linux-amd64-latest && \
+    curl -L -o atlas.sha256 https://release.ariga.io/atlas/atlas-linux-amd64-latest.sha256 && \
+    echo "$(cat atlas.sha256) atlas" | sha256sum -c - && \
+    chmod +x atlas && \
+    mv atlas /usr/local/bin
+
 RUN mkdir -p /opt/app-root/src && \
-    chown -R 1001:0 /opt/app-root
+chown -R 1001:0 /opt/app-root
 
 # Switch to user 1001 for Go operations
 USER 1001
@@ -25,7 +32,7 @@ RUN mkdir -p $GOCACHE $GOPATH/bin && \
     chmod -R 755 $GOCACHE $GOPATH
 
 # Install Air for hot reloading
-RUN go install github.com/air-verse/air@latest
+RUN go install github.com/air-verse/air@v1.61.7
 
 # Copy go mod files first for better caching
 COPY --chown=1001:0 go.mod go.sum ./
@@ -36,9 +43,6 @@ COPY --chown=1001:0 . .
 
 RUN chmod +x ./scripts/deploy/dev.sh
 
-EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl --fail --silent http://localhost:3000/health || exit 1
+EXPOSE 8080
 
 ENTRYPOINT ["./scripts/deploy/dev.sh"]

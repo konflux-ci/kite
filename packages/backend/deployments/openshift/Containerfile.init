@@ -19,10 +19,15 @@ USER root
 WORKDIR /opt/app-root/src
 
 RUN microdnf install -y postgresql && \
-
-    curl -sSf https://atlasgo.sh | sh && \
     microdnf clean all && \
     rm -rf /var/cache/yum
+
+# Get Atlas, verify, install
+RUN curl -L -o atlas https://release.ariga.io/atlas/atlas-linux-amd64-latest && \
+    curl -L -o atlas.sha256 https://release.ariga.io/atlas/atlas-linux-amd64-latest.sha256 && \
+    echo "$(cat atlas.sha256) atlas" | sha256sum -c - && \
+    chmod +x atlas && \
+    mv atlas /usr/local/bin
 
 # Atlas config, migrations and entrypoint
 COPY atlas.hcl .

@@ -15,7 +15,7 @@ func main() {
 	logger.SetLevel(logrus.InfoLevel)
 
 	// Check which environment we're in
-	env := os.Getenv("PROJECT_ENV")
+	env := os.Getenv("KITE_PROJECT_ENV")
 	if env == "production" {
 		logger.Fatal("Seeder can only be used in the development environment")
 	}

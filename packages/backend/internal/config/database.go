@@ -43,7 +43,7 @@ func InitDatabase() (*gorm.DB, error) {
 
 	// Configure logger based on environment
 	var gormLogger logger.Interface
-	if os.Getenv("PROJECT_ENV") == "development" {
+	if os.Getenv("KITE_PROJECT_ENV") == "development" {
 		gormLogger = logger.Default.LogMode(logger.Info)
 	} else {
 		gormLogger = logger.Default.LogMode(logger.Error)

@@ -72,7 +72,7 @@ COPY scripts/deploy/prod.sh entrypoint.sh
 RUN chmod -R g=u . && \
     chmod +x entrypoint.sh
 
-ENV PROJECT_ENV=production
+ENV KITE_PROJECT_ENV=production
 
 # Set non-root user
 USER 1001

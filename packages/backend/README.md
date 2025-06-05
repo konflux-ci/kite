@@ -59,5 +59,26 @@ This is used by the service to talk to the cluster, allowing it to perform actio
 
 ### 5. Access the Application
 
-- API: http://localhost:3000/health
+- API: http://localhost:8080/health
 
+## Migrations
+
+First, you'll need to get into the container by running:
+
+```bash
+<docker|podman> compose -f compose.yaml exec app bash
+```
+
+Then all migration operations can be done using the `make` (see `Makefile`):
+
+```bash
+# Alter schema
+# Generate new migration with changes
+make migration NAME="add_some_column"
+
+# Apply pending migrations
+make migrate
+
+# Get status of DB migrations
+make status
+```
