@@ -28,7 +28,7 @@ jobs:
         working-directory: packages/backend
         run: |
           # Check if any files need formatting
-          FILES=$(gofmt l .)
+          FILES=$(gofmt -l .)
           # Print any files needing formatting
           if [ -n "$FILES" ]; then
             echo "The following files need formatting:"
