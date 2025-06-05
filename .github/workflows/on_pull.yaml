@@ -9,27 +9,45 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: '1.23'
 
-      - name: Verify dependencies are tidy
+      - name: Verify backend dependencies are tidy
         run: |
+          cd packages/backend
           go mod tidy
           git diff --exit-code
 
       - name: Lint
         run: |
+          cd packages/backend
           go vet ./...
 
       - name: Format check
         run: |
-          test -z "$(gofmt -l .)"
+          cd packages/backend
+          # Check if any files need formatting
+          FILES=$(gofmt l .)
+          # Print any files needing formatting
+          if [ -n "$FILES" ]; then
+            echo "The following files need formatting:"
+            echo "$FILES"
+          exit 1
+          fi
 
       - name: Build
-        run: go build ./...
+        run: |
+          cd packages/backend
+          go build ./...
+
+      - name: Install binary
+        run: |
+          cd packages/backend
+          go install ./...
 
       - name: Test Backend
         run: |
           cd packages/backend
           go test -v ./internal/...
+
