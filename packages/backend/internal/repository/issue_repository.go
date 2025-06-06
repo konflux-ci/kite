@@ -193,13 +193,13 @@ func (i *issueRepository) Create(ctx context.Context, req dto.CreateIssueRequest
 		Description: req.Description,
 		Severity:    req.Severity,
 		IssueType:   req.IssueType,
-		State:       req.State,
+		State:       state,
 		DetectedAt:  now,
 		Namespace:   req.Namespace,
 		Scope: models.IssueScope{
 			ResourceType:      req.Scope.ResourceType,
 			ResourceName:      req.Scope.ResourceName,
-			ResourceNamespace: req.Scope.ResourceNamespace,
+			ResourceNamespace: resourceNamespace,
 		},
 	}
 

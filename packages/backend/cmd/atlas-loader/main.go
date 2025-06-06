@@ -23,5 +23,8 @@ func main() {
 	}
 
 	// Output statements to stdout
-	io.WriteString(os.Stdout, stmts)
+	_, err = io.WriteString(os.Stdout, stmts)
+	if err != nil {
+		log.Fatalf("Unexpected error, got: %v", err)
+	}
 }
