@@ -1,33 +1,35 @@
-name: PR Checks
+name: CI
 
 on:
   pull_request:
     branches: ["**"]
 
 jobs:
-  pr-check:
+  ci:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/backend
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout branch
+        uses: actions/checkout@v3
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
 
       - name: Verify backend dependencies are tidy
-        working-directory: packages/backend
         run: |
           go mod tidy
           git diff --exit-code
 
       - name: Lint
-        working-directory: packages/backend
         run: |
           go vet ./...
 
       - name: Format check
-        working-directory: packages/backend
         run: |
           # Check if any files need formatting
           FILES=$(gofmt -l .)
@@ -39,17 +41,14 @@ jobs:
           fi
 
       - name: Build
-        working-directory: packages/backend
         run: |
           go build ./...
 
       - name: Install binary
-        working-directory: packages/backend
         run: |
           go install ./...
 
       - name: Test Backend
-        working-directory: packages/backend
         run: |
           go test -v ./internal/...
 
