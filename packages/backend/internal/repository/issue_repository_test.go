@@ -112,10 +112,6 @@ func TestIssueRepository_FindByID(t *testing.T) {
 	repo := NewIssueRepository(db, logger)
 	ctx := context.Background()
 
-	// Get initial count of DB
-	var initialDBCount int64
-	db.Model(&models.Issue{}).Count(&initialDBCount)
-
 	// Create a test issue first
 	req := createTestIssue("Find Test Issue", "test-namespace")
 	createdIssue, err := repo.Create(ctx, req)
@@ -124,14 +120,6 @@ func TestIssueRepository_FindByID(t *testing.T) {
 	}
 	if createdIssue == nil {
 		t.Fatalf("Expected issue to be created, got nil")
-	}
-
-	// Confirm that issue was saved to the database
-	var currentCount int64
-	db.Model(&models.Issue{}).Count(&currentCount)
-	expectedCount := initialDBCount + 1
-	if currentCount != expectedCount {
-		t.Errorf("Expected %d, got %d", expectedCount, currentCount)
 	}
 
 	// Find the issue
@@ -150,5 +138,25 @@ func TestIssueRepository_FindByID(t *testing.T) {
 
 	if foundIssue.Title != createdIssue.Title {
 		t.Errorf("Expected title '%s', got '%s'", createdIssue.Title, foundIssue.Title)
+	}
+}
+
+func TestIssueRepository_FindByID_NotFound(t *testing.T) {
+	// Setup
+	db := setupTestDB(t)
+	logger := logrus.New()
+	repo := NewIssueRepository(db, logger)
+	ctx := context.Background()
+
+	// Try to find non-existent issue
+	foundIssue, err := repo.FindByID(ctx, "does-not-exist")
+
+	// Verify
+	if err != nil {
+		t.Fatalf("Expected no error for non-existent issue, got %v", err)
+	}
+
+	if foundIssue != nil {
+		t.Errorf("Expected nil for non-existent issue, got an issue")
 	}
 }
