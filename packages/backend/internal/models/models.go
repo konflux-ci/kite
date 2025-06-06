@@ -36,7 +36,7 @@ const (
 
 // Issue represents an issue in the cluster
 type Issue struct {
-	ID          string     `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID          string     `gorm:"type:uuid;primaryKey;" json:"id"`
 	Title       string     `gorm:"not null" json:"title"`
 	Description string     `gorm:"not null" json:"description"`
 	Severity    Severity   `gorm:"type:varchar(20);not null" json:"severity"`
@@ -70,7 +70,7 @@ func (i *Issue) BeforeCreate(tx *gorm.DB) error {
 
 // IssueScope represents the scope of an Issue
 type IssueScope struct {
-	ID                string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID                string `gorm:"type:uuid;primaryKey" json:"id"`
 	ResourceType      string `gorm:"not null" json:"resourceType"`
 	ResourceName      string `gorm:"not null" json:"resourceName"`
 	ResourceNamespace string `gorm:"not null" json:"resourceNamespace"`
@@ -87,9 +87,9 @@ func (s *IssueScope) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// RelatedIssue represetns relationships between issues
+// RelatedIssue represents relationships between issues
 type RelatedIssue struct {
-	ID       string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID       string `gorm:"type:uuid;primaryKey" json:"id"`
 	SourceID string `gorm:"type:uuid;not null" json:"sourceId"`
 	TargetID string `gorm:"type:uuid;not null" json:"targetId"`
 
@@ -108,7 +108,7 @@ func (r *RelatedIssue) BeforeCreate(tx *gorm.DB) error {
 
 // Link represents a link associated with an issue
 type Link struct {
-	ID      string `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID      string `gorm:"type:uuid;primaryKey" json:"id"`
 	Title   string `gorm:"not null" json:"title"`
 	URL     string `gorm:"not null" json:"url"`
 	IssueID string `gorm:"type:uuid;not null" json:"issueId"`
