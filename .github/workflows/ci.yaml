@@ -36,9 +36,9 @@ jobs:
           go vet ./...
 
       - name: Run linter
-        uses: golangci/golang-ci-lint-action@v8
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: '1.23'
+          version: v2.1
      
       - name: Run go fmt
         run: |
