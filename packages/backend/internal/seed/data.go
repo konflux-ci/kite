@@ -270,9 +270,6 @@ func seedIssues(tx *gorm.DB, scopeMap map[string]string) error {
 	return tx.Create(&issues).Error
 }
 
-// Store the created issue IDs for linking
-var createdIssueIDs = make(map[string]string)
-
 func seedLinks(tx *gorm.DB) error {
 	// First, get the issue IDs by querying the database
 	var issues []models.Issue

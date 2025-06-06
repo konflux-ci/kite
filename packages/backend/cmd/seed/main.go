@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// Try to load ENV file
-	envFile, err := config.GetEnvFileInCwd(".env.development")
+	envFile, _ := config.GetEnvFileInCwd(".env.development")
 	if err := godotenv.Load(envFile); err != nil {
 		logger.WithError(err).Info("Could not load env file, using existing environment variables")
 	} else {
@@ -41,7 +41,12 @@ func main() {
 	if err != nil {
 		logger.WithError(err).Fatal("Failed to get database instance")
 	}
-	defer sqlDB.Close()
+	defer func() {
+		err := sqlDB.Close()
+		if err != nil {
+			logger.WithError(err).Fatal("Failed to close database connection")
+		}
+	}()
 
 	// Run seeding
 	if err := seed.SeedData(db); err != nil {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/konflux-ci/kite/internal/handlers/dto"
 	"github.com/konflux-ci/kite/internal/models"
 	"github.com/konflux-ci/kite/internal/services"
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
