@@ -264,7 +264,7 @@ func TestIssueRepository_Update(t *testing.T) {
 	}
 
 	if updatedIssue == nil {
-		t.Error("Expected issue to be returned")
+		t.Fatal("Expected issue to be returned")
 	}
 
 	if updatedIssue.ID != expectedID {

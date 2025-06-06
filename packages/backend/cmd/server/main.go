@@ -55,7 +55,12 @@ func main() {
 	if err != nil {
 		logger.WithError(err).Fatal("Failed to get database instance")
 	}
-	defer sqlDB.Close()
+	defer func() {
+		err := sqlDB.Close()
+		if err != nil {
+			logger.WithError(err).Fatal("Failed to close database connection")
+		}
+	}()
 
 	// Setup router
 	router, err := handler_http.SetupRouter(db, logger)
