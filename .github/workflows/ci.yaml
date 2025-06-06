@@ -24,7 +24,7 @@ jobs:
       - name: Verify backend dependencies are tidy
         run: |
           go mod tidy
-          result=git diff --exit-code
+          result="$(git diff --exit-code)"
           if [ -n "$result" ]; then
             echo "Please run go mod tidy and commit changes"
             echo "$result"
