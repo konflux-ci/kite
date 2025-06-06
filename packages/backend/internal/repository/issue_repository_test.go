@@ -219,3 +219,31 @@ func TestIssueRepository_FindAll_WithFilters(t *testing.T) {
 		}
 	}
 }
+
+func TestIssueRepository_CheckDuplicate(t *testing.T) {
+	// Setup
+	ctx, _, repo := setupTestScenario(t)
+
+	// Create an issue
+	req := createTestIssue("Duplicate Test", "test-namespace")
+	_, err := repo.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("Unexpected error, got %v", err)
+	}
+
+	// Check for duplicates with the same properties
+	result, err := repo.CheckDuplicate(ctx, req)
+
+	// Verify
+	if err != nil {
+		t.Fatalf("Unexpected error, got %v", err)
+	}
+
+	if !result.IsDuplicate {
+		t.Error("Expected issue to be a duplicate")
+	}
+
+	if result.ExistingIssue == nil {
+		t.Error("Expected existing issue to be returned")
+	}
+}
