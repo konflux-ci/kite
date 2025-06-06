@@ -6,6 +6,7 @@ on:
 
 jobs:
   ci:
+    Name: Run Checks
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,7 +24,12 @@ jobs:
       - name: Verify backend dependencies are tidy
         run: |
           go mod tidy
-          git diff --exit-code
+          result=git diff --exit-code
+          if [ -n "$result" ]; then
+            echo "Please run go mod tidy and commit changes"
+            echo "$result"
+            exit 1
+          fi
 
       - name: Lint
         run: |
