@@ -104,3 +104,51 @@ func TestIssueRepository_Create(t *testing.T) {
 		t.Errorf("Expected %d, got %d", expectedCount, currentCount)
 	}
 }
+
+func TestIssueRepository_FindByID(t *testing.T) {
+	// Setup
+	db := setupTestDB(t)
+	logger := logrus.New()
+	repo := NewIssueRepository(db, logger)
+	ctx := context.Background()
+
+	// Get initial count of DB
+	var initialDBCount int64
+	db.Model(&models.Issue{}).Count(&initialDBCount)
+
+	// Create a test issue first
+	req := createTestIssue("Find Test Issue", "test-namespace")
+	createdIssue, err := repo.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("Unexpected error, got %v", err)
+	}
+	if createdIssue == nil {
+		t.Fatalf("Expected issue to be created, got nil")
+	}
+
+	// Confirm that issue was saved to the database
+	var currentCount int64
+	db.Model(&models.Issue{}).Count(&currentCount)
+	expectedCount := initialDBCount + 1
+	if currentCount != expectedCount {
+		t.Errorf("Expected %d, got %d", expectedCount, currentCount)
+	}
+
+	// Find the issue
+	foundIssue, err := repo.FindByID(ctx, createdIssue.ID)
+	if err != nil {
+		t.Fatalf("Unexpected error, got %v", err)
+	}
+	if foundIssue == nil {
+		t.Fatalf("Expected issue to be found, got nil")
+	}
+
+	// Verify
+	if foundIssue.ID != createdIssue.ID {
+		t.Errorf("Expected ID '%s', got '%s'", createdIssue.ID, foundIssue.IssueType)
+	}
+
+	if foundIssue.Title != createdIssue.Title {
+		t.Errorf("Expected title '%s', got '%s'", createdIssue.Title, foundIssue.Title)
+	}
+}
