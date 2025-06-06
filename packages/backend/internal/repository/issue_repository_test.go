@@ -40,6 +40,16 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// setupTestScenario sets up a context and repository for test scenarios
+func setupTestScenario(t *testing.T) (context.Context, *gorm.DB, IssueRepository) {
+	db := setupTestDB(t)
+	logger := logrus.New()
+	repo := NewIssueRepository(db, logger)
+	ctx := context.Background()
+
+	return ctx, db, repo
+}
+
 // createTestIssue is a helper function to create test issues
 func createTestIssue(title, namespace string) dto.CreateIssueRequest {
 	return dto.CreateIssueRequest{
@@ -64,10 +74,7 @@ func createTestIssue(title, namespace string) dto.CreateIssueRequest {
 
 func TestIssueRepository_Create(t *testing.T) {
 	// Setup
-	db := setupTestDB(t)
-	logger := logrus.New()
-	repo := NewIssueRepository(db, logger)
-	ctx := context.Background()
+	ctx, db, repo := setupTestScenario(t)
 
 	// Get initial count of DB
 	var initialDBCount int64
@@ -107,10 +114,7 @@ func TestIssueRepository_Create(t *testing.T) {
 
 func TestIssueRepository_FindByID(t *testing.T) {
 	// Setup
-	db := setupTestDB(t)
-	logger := logrus.New()
-	repo := NewIssueRepository(db, logger)
-	ctx := context.Background()
+	ctx, _, repo := setupTestScenario(t)
 
 	// Create a test issue first
 	req := createTestIssue("Find Test Issue", "test-namespace")
@@ -143,11 +147,7 @@ func TestIssueRepository_FindByID(t *testing.T) {
 
 func TestIssueRepository_FindByID_NotFound(t *testing.T) {
 	// Setup
-	db := setupTestDB(t)
-	logger := logrus.New()
-	repo := NewIssueRepository(db, logger)
-	ctx := context.Background()
-
+	ctx, _, repo := setupTestScenario(t)
 	// Try to find non-existent issue
 	foundIssue, err := repo.FindByID(ctx, "does-not-exist")
 
@@ -158,5 +158,64 @@ func TestIssueRepository_FindByID_NotFound(t *testing.T) {
 
 	if foundIssue != nil {
 		t.Errorf("Expected nil for non-existent issue, got an issue")
+	}
+}
+
+func TestIssueRepository_FindAll_WithFilters(t *testing.T) {
+	// Setup
+	ctx, _, repo := setupTestScenario(t)
+
+	// Create test issues
+	issues := []dto.CreateIssueRequest{
+		createTestIssue("Build Issue", "team-test"),
+		{
+			Title:       "Test Issue",
+			Description: "Test Description",
+			Severity:    models.SeverityCritical,
+			IssueType:   models.IssueTypeTest,
+			Namespace:   "team-test",
+			Scope: dto.ScopeReqBody{
+				ResourceType:      "component",
+				ResourceName:      "test-component",
+				ResourceNamespace: "team-test",
+			},
+		},
+		createTestIssue("Release Issue", "team-beta"),
+	}
+
+	// Write issues to DB
+	for _, req := range issues {
+		_, err := repo.Create(ctx, req)
+		if err != nil {
+			t.Fatalf("Failed to create test issue: %v", err)
+		}
+	}
+
+	// Check: Find all issues in team-alpha
+	filters := IssueQueryFilters{
+		Namespace: "team-test",
+		Limit:     10,
+	}
+
+	foundIssues, total, err := repo.FindAll(ctx, filters)
+
+	// Verify
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if total != 2 {
+		t.Errorf("Expected 2 issues in team-test, got %d", total)
+	}
+
+	if len(foundIssues) != 2 {
+		t.Errorf("Expected 2 issues returned, got %d", len(foundIssues))
+	}
+
+	// Check that all returned issues belong to team-test
+	for _, issue := range foundIssues {
+		if issue.Namespace != "team-test" {
+			t.Errorf("Expected namespace 'team-test', got '%s'", issue.Namespace)
+		}
 	}
 }
