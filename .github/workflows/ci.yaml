@@ -6,7 +6,7 @@ on:
 
 jobs:
   ci:
-    Name: Run Checks
+    name: Run Checks
     runs-on: ubuntu-latest
     defaults:
       run:
