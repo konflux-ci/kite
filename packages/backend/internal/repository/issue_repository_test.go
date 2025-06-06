@@ -247,3 +247,37 @@ func TestIssueRepository_CheckDuplicate(t *testing.T) {
 		t.Error("Expected existing issue to be returned")
 	}
 }
+
+func TestIssueRepository_Update(t *testing.T) {
+	// Setup
+	ctx, db, repo := setupTestScenario(t)
+
+	// Get latest issue
+	var latestIssue models.Issue
+	db.Last(&latestIssue)
+	expectedID := latestIssue.ID
+	expectedTitle := "Updated Issue"
+
+	updatedIssueReq := dto.UpdateIssueRequest{
+		Title: &expectedTitle,
+	}
+	// Update
+	updatedIssue, err := repo.Update(ctx, expectedID, updatedIssueReq)
+
+	// Verify
+	if err != nil {
+		t.Fatalf("Unexpected error, got %v", err)
+	}
+
+	if updatedIssue == nil {
+		t.Error("Expected issue to be returned")
+	}
+
+	if updatedIssue.ID != expectedID {
+		t.Errorf("Wrong issue returned, got issue with ID %s, expected %s", updatedIssue.ID, expectedID)
+	}
+
+	if updatedIssue.Title != expectedTitle {
+		t.Errorf("Wrong title, got '%s', expected '%s'", updatedIssue.Title, expectedTitle)
+	}
+}
