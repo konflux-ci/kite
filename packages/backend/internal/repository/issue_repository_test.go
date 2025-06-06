@@ -6,7 +6,6 @@ import (
 
 	"github.com/konflux-ci/kite/internal/handlers/dto"
 	"github.com/konflux-ci/kite/internal/models"
-	"github.com/konflux-ci/kite/internal/seed"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -30,11 +29,6 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 	if err != nil {
 		t.Fatalf("Failed to migrate test database: %v", err)
-	}
-
-	// Seed the DB with test data
-	if err := seed.SeedData(db); err != nil {
-		t.Fatalf("Failed to seed test database: %v", err)
 	}
 
 	return db
@@ -76,10 +70,6 @@ func TestIssueRepository_Create(t *testing.T) {
 	// Setup
 	ctx, db, repo := setupTestScenario(t)
 
-	// Get initial count of DB
-	var initialDBCount int64
-	db.Model(&models.Issue{}).Count(&initialDBCount)
-
 	// Test issue data
 	req := createTestIssue("Test Issue", "test-namespace")
 
@@ -106,9 +96,8 @@ func TestIssueRepository_Create(t *testing.T) {
 	// Confirm that issue was saved to the database
 	var currentCount int64
 	db.Model(&models.Issue{}).Count(&currentCount)
-	expectedCount := initialDBCount + 1
-	if currentCount != expectedCount {
-		t.Errorf("Expected %d, got %d", expectedCount, currentCount)
+	if currentCount != 1 {
+		t.Errorf("Expected 1 issue in DB, got %d", currentCount)
 	}
 }
 
@@ -250,12 +239,17 @@ func TestIssueRepository_CheckDuplicate(t *testing.T) {
 
 func TestIssueRepository_Update(t *testing.T) {
 	// Setup
-	ctx, db, repo := setupTestScenario(t)
+	ctx, _, repo := setupTestScenario(t)
+
+	// Create an issue
+	req := createTestIssue("Some Issue", "test-namespace")
+	issue, err := repo.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("Unexpected error, got %v", err)
+	}
 
 	// Get latest issue
-	var latestIssue models.Issue
-	db.Last(&latestIssue)
-	expectedID := latestIssue.ID
+	expectedID := issue.ID
 	expectedTitle := "Updated Issue"
 
 	updatedIssueReq := dto.UpdateIssueRequest{
@@ -279,5 +273,56 @@ func TestIssueRepository_Update(t *testing.T) {
 
 	if updatedIssue.Title != expectedTitle {
 		t.Errorf("Wrong title, got '%s', expected '%s'", updatedIssue.Title, expectedTitle)
+	}
+}
+
+func TestIssueRepository_Delete(t *testing.T) {
+	ctx, db, repo := setupTestScenario(t)
+
+	// Create issue with links
+	req := createTestIssue("Delete Test", "test-namespace")
+	req.Links = append(req.Links,
+		dto.CreateLinkRequest{
+			Title: "Delete Test Link",
+			URL:   "https://konflux.test/some-link",
+		},
+	)
+
+	createdIssue, err := repo.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("Failed to create test issue: %v", err)
+	}
+
+	// Verify issue and link exists
+	var issueCount, linkCount int64
+	db.Model(&models.Issue{}).Count(&issueCount)
+	db.Model(&models.Link{}).Count(&linkCount)
+
+	if issueCount != 1 {
+		t.Errorf("Expected 1 issue before delete, got %d", issueCount)
+	}
+
+	if linkCount != 2 {
+		t.Errorf("Expected 2 links before delete, got %d", linkCount)
+	}
+
+	// Delete the issue
+	err = repo.Delete(ctx, createdIssue.ID)
+
+	// Verify
+	if err != nil {
+		t.Fatalf("Unexpected error, got %v", err)
+	}
+
+	// Update variables after deletion
+	db.Model(&models.Issue{}).Count(&issueCount)
+	db.Model(&models.Link{}).Count(&linkCount)
+
+	if issueCount != 0 {
+		t.Errorf("Expected 0 issues after delete, got %d", issueCount)
+	}
+
+	if linkCount != 0 {
+		t.Errorf("Expected 0 links after delete, got %d", linkCount)
 	}
 }
