@@ -1,4 +1,4 @@
-package testingtools
+package testhelpers
 
 import (
 	"testing"
