@@ -6,37 +6,14 @@ import (
 
 	"github.com/konflux-ci/kite/internal/handlers/dto"
 	"github.com/konflux-ci/kite/internal/models"
+	"github.com/konflux-ci/kite/internal/testingtools"
 	"github.com/sirupsen/logrus"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-// setupTestDB creates an in-memory SQLite database for testing
-func setupTestDB(t *testing.T) *gorm.DB {
-	// Use SQLite in-memory DB for tests
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("Failed to created test database: %v", err)
-	}
-
-	// Run migrations
-	err = db.AutoMigrate(
-		&models.IssueScope{},
-		&models.Issue{},
-		&models.Link{},
-		&models.RelatedIssue{},
-	)
-
-	if err != nil {
-		t.Fatalf("Failed to migrate test database: %v", err)
-	}
-
-	return db
-}
-
 // setupTestScenario sets up a context and repository for test scenarios
 func setupTestScenario(t *testing.T) (context.Context, *gorm.DB, IssueRepository) {
-	db := setupTestDB(t)
+	db := testingtools.SetupTestDB(t)
 	logger := logrus.New()
 	repo := NewIssueRepository(db, logger)
 	ctx := context.Background()
