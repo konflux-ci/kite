@@ -6,14 +6,14 @@ import (
 
 	"github.com/konflux-ci/kite/internal/handlers/dto"
 	"github.com/konflux-ci/kite/internal/models"
-	"github.com/konflux-ci/kite/internal/testingtools"
+	"github.com/konflux-ci/kite/internal/testhelpers"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 // setupTestScenario sets up a context and repository for test scenarios
 func setupTestScenario(t *testing.T) (context.Context, *gorm.DB, IssueRepository) {
-	db := testingtools.SetupTestDB(t)
+	db := testhelpers.SetupTestDB(t)
 	logger := logrus.New()
 	repo := NewIssueRepository(db, logger)
 	ctx := context.Background()
