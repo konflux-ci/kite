@@ -1,6 +1,6 @@
 # Konflux Issue Tracking Engine - Kite :kite:
 
-![Tests](https://github.com/konflux-ci/kite/actions/workflows/ci.yaml/badge.svg)
+![Go CI Checks](https://github.com/konflux-ci/kite/actions/workflows/go-ci-checks.yaml/badge.svg)
 
 :construction: **Under Construction – Currently a Proof of Concept** :construction:
 
