@@ -1,5 +1,7 @@
 # Konflux Issue Tracking Engine - Kite :kite:
 
+![Tests](https://github.com/OWNER/REPOSITORY/actions/workflows/ci/badge.svg)
+
 :construction: **Under Construction – Currently a Proof of Concept** :construction:
 
 ## About
