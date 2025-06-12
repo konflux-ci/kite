@@ -55,19 +55,12 @@ func TestIssueRepository_Create(t *testing.T) {
 
 	// Check
 	if err != nil {
-		t.Fatalf("Unexpected error, got %v", err)
+		t.Fatalf("unexpected error, got %v", err)
 	}
 
-	if issue == nil {
-		t.Fatalf("Expected issue to be created, got nil")
-	}
-
-	if issue.Title != req.Title {
-		t.Errorf("Expected title '%s', got '%s'", req.Title, issue.Title)
-	}
-
-	if issue.Namespace != req.Namespace {
-		t.Errorf("Expected namespace '%s', got '%s'", req.Namespace, issue.Namespace)
+	err = testhelpers.CompareIssueToDTO(*issue, req)
+	if err != nil {
+		t.Errorf("unexpected error, got: %v", err)
 	}
 
 	// Confirm that issue was saved to the database
@@ -86,7 +79,7 @@ func TestIssueRepository_FindByID(t *testing.T) {
 	req := createTestIssue("Find Test Issue", "test-namespace")
 	createdIssue, err := repo.Create(ctx, req)
 	if err != nil {
-		t.Fatalf("Unexpected error, got %v", err)
+		t.Fatalf("unexpected error, got %v", err)
 	}
 	if createdIssue == nil {
 		t.Fatalf("Expected issue to be created, got nil")
@@ -95,19 +88,16 @@ func TestIssueRepository_FindByID(t *testing.T) {
 	// Find the issue
 	foundIssue, err := repo.FindByID(ctx, createdIssue.ID)
 	if err != nil {
-		t.Fatalf("Unexpected error, got %v", err)
+		t.Fatalf("unexpected error, got: %v", err)
 	}
 	if foundIssue == nil {
 		t.Fatalf("Expected issue to be found, got nil")
 	}
 
 	// Verify
-	if foundIssue.ID != createdIssue.ID {
-		t.Errorf("Expected ID '%s', got '%s'", createdIssue.ID, foundIssue.IssueType)
-	}
-
-	if foundIssue.Title != createdIssue.Title {
-		t.Errorf("Expected title '%s', got '%s'", createdIssue.Title, foundIssue.Title)
+	err = testhelpers.CompareIssues(*createdIssue, *foundIssue)
+	if err != nil {
+		t.Errorf("unexpected error, got: %v", err)
 	}
 }
 
