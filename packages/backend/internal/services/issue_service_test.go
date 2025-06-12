@@ -171,7 +171,7 @@ func TestIssueService_FindIssue_WithFilters(t *testing.T) {
 
 	firstIssueFound := response.Data[0]
 	expectedIssue := req[2]
-	testhelpers.CompareIssueToDTO(firstIssueFound, expectedIssue)
+	err = testhelpers.CompareIssueToDTO(firstIssueFound, expectedIssue)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
