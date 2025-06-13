@@ -151,3 +151,47 @@ func TestIssueHandler_GetIssues(t *testing.T) {
 		t.Errorf("expected total 2, got %d", response.Total)
 	}
 }
+
+func TestIssueHandler_GetIssue_Found(t *testing.T) {
+	mockIssue := &models.Issue{
+		ID:        "test-issue-abc",
+		Title:     "Test Issue",
+		Namespace: "team-alpha",
+		Severity:  models.SeverityMajor,
+	}
+
+	mockService := &MockIssueService{
+		findIssueByIDResult: mockIssue,
+	}
+
+	handler := setupTestHandler(mockService)
+	router := setupTestRouter(handler)
+
+	// Create request
+	req, err := net_http.NewRequest("GET", "/api/v1/issues/test-issue-abc", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	w := net_httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != net_http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var response models.Issue
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+
+	if response.ID != mockIssue.ID {
+		t.Errorf("Expected ID '%s', got '%s'", mockIssue.ID, response.ID)
+	}
+
+	if response.Title != mockIssue.Title {
+		t.Errorf("expected title '%s', got '%s'", mockIssue.Title, response.Title)
+	}
+}
