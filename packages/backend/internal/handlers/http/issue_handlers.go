@@ -17,11 +17,11 @@ import (
 )
 
 type IssueHandler struct {
-	issueService *services.IssueService
+	issueService services.IssueServiceInterface
 	logger       *logrus.Logger
 }
 
-func NewIssueHandler(issueService *services.IssueService, logger *logrus.Logger) *IssueHandler {
+func NewIssueHandler(issueService services.IssueServiceInterface, logger *logrus.Logger) *IssueHandler {
 	return &IssueHandler{
 		issueService: issueService,
 		logger:       logger,
