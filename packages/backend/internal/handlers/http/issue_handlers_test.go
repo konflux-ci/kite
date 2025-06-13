@@ -2,7 +2,6 @@ package http
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -12,68 +11,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/konflux-ci/kite/internal/handlers/dto"
 	"github.com/konflux-ci/kite/internal/models"
-	"github.com/konflux-ci/kite/internal/repository"
 	"github.com/sirupsen/logrus"
 )
 
-// MockIssueService is a mock implementation for testing handlers
-type MockIssueService struct {
-	findIssueResults    *dto.IssueResponse
-	findIssuesError     error
-	findIssueByIDResult *models.Issue
-	findIssueByIDError  error
-	createIssueResult   *models.Issue
-	createIssueError    error
-	deleteIssueError    error
-	updateIssueResult   *models.Issue
-	updateIssueError    error
-}
-
-func (m *MockIssueService) FindIssues(ctx context.Context, filters repository.IssueQueryFilters) (*dto.IssueResponse, error) {
-	return m.findIssueResults, m.findIssuesError
-}
-
-func (m *MockIssueService) FindIssueByID(ctx context.Context, id string) (*models.Issue, error) {
-	return m.findIssueByIDResult, m.findIssueByIDError
-}
-
-func (m *MockIssueService) CreateIssue(ctx context.Context, req dto.CreateIssueRequest) (*models.Issue, error) {
-	return m.createIssueResult, m.createIssueError
-}
-
-func (m *MockIssueService) UpdateIssue(ctx context.Context, id string, req dto.UpdateIssueRequest) (*models.Issue, error) {
-	return m.updateIssueResult, m.updateIssueError
-}
-
-func (m *MockIssueService) DeleteIssue(ctx context.Context, id string) error {
-	return m.deleteIssueError
-}
-
-func (m *MockIssueService) CheckForDuplicateIssue(ctx context.Context, req dto.CreateIssueRequest) (*repository.DuplicateCheckResult, error) {
-	return nil, nil
-}
-
-func (m *MockIssueService) ResolveIssuesByScope(ctx context.Context, resourceType, resourceName, namespace string) (int64, error) {
-	return 0, nil
-}
-
-func (m *MockIssueService) AddRelatedIssue(ctx context.Context, sourceID, targetID string) error {
-	return nil
-}
-
-func (m *MockIssueService) RemoveRelatedIssue(ctx context.Context, sourceID, targetID string) error {
-	return nil
-}
-
-// setTestHandler creates a test handler with mock service
-func setupTestHandler(mockService *MockIssueService) *IssueHandler {
+// setTestIssueHandler creates a test handler with mock service
+func setupTestIssueHandler(mockService *MockIssueService) *IssueHandler {
 	logger := logrus.New()
 	logger.SetLevel(logrus.ErrorLevel)
 	return NewIssueHandler(mockService, logger)
 }
 
-// setupTestRouter creates a test router with HTTP tests
-func setupTestRouter(handler *IssueHandler) *gin.Engine {
+// setupTestIssueRouter creates a test router with HTTP tests
+func setupTestIssueRouter(handler *IssueHandler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
@@ -117,8 +66,8 @@ func TestIssueHandler_GetIssues(t *testing.T) {
 		},
 	}
 
-	handler := setupTestHandler(mockService)
-	router := setupTestRouter(handler)
+	handler := setupTestIssueHandler(mockService)
+	router := setupTestIssueRouter(handler)
 
 	// Create test request
 	req, err := net_http.NewRequest("GET", "/api/v1/issues?namespace=team-alpha", nil)
@@ -165,8 +114,8 @@ func TestIssueHandler_GetIssue_Found(t *testing.T) {
 		findIssueByIDResult: mockIssue,
 	}
 
-	handler := setupTestHandler(mockService)
-	router := setupTestRouter(handler)
+	handler := setupTestIssueHandler(mockService)
+	router := setupTestIssueRouter(handler)
 
 	// Create request
 	req, err := net_http.NewRequest("GET", "/api/v1/issues/test-issue-abc", nil)
@@ -202,8 +151,8 @@ func TestIssueHandler_GetIssue_NotFound(t *testing.T) {
 		findIssueByIDResult: nil,
 	}
 
-	handler := setupTestHandler(mockService)
-	router := setupTestRouter(handler)
+	handler := setupTestIssueHandler(mockService)
+	router := setupTestIssueRouter(handler)
 
 	req, err := net_http.NewRequest("GET", "/api/v1/issues/do-not-exist-id", nil)
 	if err != nil {
@@ -257,8 +206,8 @@ func TestIssueHandler_CreateIssue_Success(t *testing.T) {
 		createIssueResult: createdIssue,
 	}
 
-	handler := setupTestHandler(mockService)
-	router := setupTestRouter(handler)
+	handler := setupTestIssueHandler(mockService)
+	router := setupTestIssueRouter(handler)
 
 	// Create request body
 	reqBody, err := json.Marshal(createRequest)
@@ -270,7 +219,7 @@ func TestIssueHandler_CreateIssue_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
 	}
-	req.Header.Set("Context-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	w := net_httptest.NewRecorder()
 
@@ -291,14 +240,14 @@ func TestIssueHandler_CreateIssue_Success(t *testing.T) {
 	}
 
 	if response.ID != createdIssue.ID {
-		t.Errorf("epxected ID '%s', got '%s'", createdIssue.ID, response.ID)
+		t.Errorf("expected ID '%s', got '%s'", createdIssue.ID, response.ID)
 	}
 }
 
 func TestIssueHandler_CreateIssue_InvalidRequest(t *testing.T) {
 	mockService := &MockIssueService{}
-	handler := setupTestHandler(mockService)
-	router := setupTestRouter(handler)
+	handler := setupTestIssueHandler(mockService)
+	router := setupTestIssueRouter(handler)
 
 	// Create invalid request with missing required fields
 	invalidRequest := map[string]interface{}{
@@ -347,8 +296,8 @@ func TestIssueHandler_DeleteIssue_Success(t *testing.T) {
 		deleteIssueError:    nil,
 	}
 
-	handler := setupTestHandler(mockService)
-	router := setupTestRouter(handler)
+	handler := setupTestIssueHandler(mockService)
+	router := setupTestIssueRouter(handler)
 
 	req, err := net_http.NewRequest("DELETE", "/api/v1/issues/delete-test-abc", nil)
 	if err != nil {
@@ -389,8 +338,8 @@ func TestIssueHandler_ResolveIssue(t *testing.T) {
 		updateIssueResult:   resolvedIssue,
 	}
 
-	handler := setupTestHandler(mockService)
-	router := setupTestRouter(handler)
+	handler := setupTestIssueHandler(mockService)
+	router := setupTestIssueRouter(handler)
 
 	req, err := net_http.NewRequest("POST", "/api/v1/issues/resolve-test-abc/resolve", nil)
 	if err != nil {
