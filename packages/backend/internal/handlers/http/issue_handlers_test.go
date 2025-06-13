@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"testing"
@@ -226,5 +227,70 @@ func TestIssueHandler_GetIssue_NotFound(t *testing.T) {
 	expectedErrorMessage := "Issue not found"
 	if response["error"] != expectedErrorMessage {
 		t.Errorf("expected error message '%s', got '%s'", expectedErrorMessage, response["error"])
+	}
+}
+
+func TestIssueHandler_CreateIssue_Success(t *testing.T) {
+	createRequest := dto.CreateIssueRequest{
+		Title:       "New Test Issue",
+		Description: "This is a test issue",
+		Severity:    models.SeverityMajor,
+		IssueType:   models.IssueTypeBuild,
+		Namespace:   "team-gamma",
+		Scope: dto.ScopeReqBody{
+			ResourceType:      "component",
+			ResourceName:      "test-component",
+			ResourceNamespace: "team-gamma",
+		},
+	}
+
+	createdIssue := &models.Issue{
+		ID:          "new-issue-abc",
+		Title:       createRequest.Title,
+		Description: createRequest.Description,
+		Severity:    createRequest.Severity,
+		IssueType:   createRequest.IssueType,
+		Namespace:   createRequest.Namespace,
+	}
+
+	mockService := &MockIssueService{
+		createIssueResult: createdIssue,
+	}
+
+	handler := setupTestHandler(mockService)
+	router := setupTestRouter(handler)
+
+	// Create request body
+	reqBody, err := json.Marshal(createRequest)
+	if err != nil {
+		t.Fatalf("Failed to marshal request,: %v", err)
+	}
+
+	req, err := net_http.NewRequest("POST", "/api/v1/issues", bytes.NewBuffer(reqBody))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Context-Type", "application/json")
+
+	w := net_httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != net_http.StatusCreated {
+		t.Errorf("expected status 201, got %d", w.Code)
+	}
+
+	var response models.Issue
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("Failed to parse response: %v", err)
+	}
+
+	if response.Title != createRequest.Title {
+		t.Errorf("expected title '%s', got '%s'", createRequest.Title, response.Title)
+	}
+
+	if response.ID != createdIssue.ID {
+		t.Errorf("epxected ID '%s', got '%s'", createdIssue.ID, response.ID)
 	}
 }
