@@ -334,3 +334,37 @@ func TestIssueHandler_CreateIssue_InvalidRequest(t *testing.T) {
 		t.Error("expected error message in response")
 	}
 }
+
+func TestIssueHandler_DeleteIssue_Success(t *testing.T) {
+	mockIssue := &models.Issue{
+		ID:        "delete-test-abc",
+		Title:     "Issue for deletion",
+		Namespace: "team-deleted",
+	}
+
+	mockService := &MockIssueService{
+		findIssueByIDResult: mockIssue,
+		deleteIssueError:    nil,
+	}
+
+	handler := setupTestHandler(mockService)
+	router := setupTestRouter(handler)
+
+	req, err := net_http.NewRequest("DELETE", "/api/v1/issues/delete-test-abc", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	w := net_httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != net_http.StatusNoContent {
+		t.Errorf("expected status 204, got %d", w.Code)
+	}
+
+	// Body should be empty for 204 No Content
+	if w.Body.Len() != 0 {
+		t.Errorf("expected empty body, got %s", w.Body.String())
+	}
+}
