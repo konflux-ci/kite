@@ -368,3 +368,50 @@ func TestIssueHandler_DeleteIssue_Success(t *testing.T) {
 		t.Errorf("expected empty body, got %s", w.Body.String())
 	}
 }
+
+func TestIssueHandler_ResolveIssue(t *testing.T) {
+	originalIssue := &models.Issue{
+		ID:        "resolve-test-abc",
+		Title:     "Issue to Resolve",
+		State:     models.IssueStateActive,
+		Namespace: "team-resolved",
+	}
+
+	resolvedIssue := &models.Issue{
+		ID:        "resolve-test-abc",
+		Title:     "Issue to Resolve",
+		State:     models.IssueStateResolved,
+		Namespace: "team-resolved",
+	}
+
+	mockService := &MockIssueService{
+		findIssueByIDResult: originalIssue,
+		updateIssueResult:   resolvedIssue,
+	}
+
+	handler := setupTestHandler(mockService)
+	router := setupTestRouter(handler)
+
+	req, err := net_http.NewRequest("POST", "/api/v1/issues/resolve-test-abc/resolve", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	w := net_httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != net_http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var response models.Issue
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("Failed to parse response: %v", err)
+	}
+
+	if response.State != models.IssueStateResolved {
+		t.Errorf("expeted state 'RESOLVED', got '%s'", response.State)
+	}
+}
