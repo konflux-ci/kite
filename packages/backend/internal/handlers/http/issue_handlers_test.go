@@ -195,3 +195,36 @@ func TestIssueHandler_GetIssue_Found(t *testing.T) {
 		t.Errorf("expected title '%s', got '%s'", mockIssue.Title, response.Title)
 	}
 }
+
+func TestIssueHandler_GetIssue_NotFound(t *testing.T) {
+	mockService := &MockIssueService{
+		findIssueByIDResult: nil,
+	}
+
+	handler := setupTestHandler(mockService)
+	router := setupTestRouter(handler)
+
+	req, err := net_http.NewRequest("GET", "/api/v1/issues/do-not-exist-id", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	w := net_httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != net_http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", w.Code)
+	}
+
+	var response map[string]string
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("Failed to parse response: %v", err)
+	}
+
+	expectedErrorMessage := "Issue not found"
+	if response["error"] != expectedErrorMessage {
+		t.Errorf("expected error message '%s', got '%s'", expectedErrorMessage, response["error"])
+	}
+}
