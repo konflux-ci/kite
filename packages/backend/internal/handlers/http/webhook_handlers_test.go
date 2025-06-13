@@ -1,0 +1,131 @@
+package http
+
+import (
+	"bytes"
+	"encoding/json"
+	"testing"
+
+	net_http "net/http"
+	net_httptest "net/http/httptest"
+
+	"github.com/gin-gonic/gin"
+	"github.com/konflux-ci/kite/internal/models"
+	"github.com/konflux-ci/kite/internal/repository"
+	"github.com/konflux-ci/kite/internal/testhelpers"
+	"github.com/sirupsen/logrus"
+)
+
+func setupTestWebhookHandler(mockService *MockIssueService) *WebhookHandler {
+	logger := logrus.New()
+	logger.SetLevel(logrus.ErrorLevel)
+	return NewWebhookHandler(mockService, logger)
+}
+
+func setupTestWebhookRouter(handler *WebhookHandler) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+
+	v1 := router.Group("/webhooks")
+	{
+		v1.POST("/pipeline-failure", handler.PipelineFailure)
+		v1.POST("/pipeline-success", handler.PipelineSuccess)
+	}
+
+	return router
+}
+
+func TestWebhookHandler_PipelineFailure(t *testing.T) {
+	// What gets sent to the webhook endpoint
+	pipelineFailureRequest := PipelineFailureRequest{
+		PipelineName:  "pipeline-xyz",
+		Namespace:     "team-failed-pr",
+		FailureReason: "task run timed out",
+		RunID:         "pipeline-xyz-123",
+	}
+
+	// Expected issue created
+	expectedIssue := &models.Issue{
+		Title:       "Pipeline run failed: pipeline-xyz",
+		Description: "The pipeline run pipeline-xyz failed with reason: task run timed out",
+		Severity:    models.SeverityMajor,
+		Namespace:   "team-failed-pr",
+		Scope: models.IssueScope{
+			ResourceType:      "pipelinerun",
+			ResourceName:      "pipeline-xyz",
+			ResourceNamespace: "team-failed-pr",
+		},
+		Links: []models.Link{
+			{
+				Title: "Pipeline Run Logs",
+				URL:   "https://cluster.dev/pipelineruns/pipeline-xyz-123/logs",
+			},
+		},
+	}
+
+	mockService := &MockIssueService{
+		// This should not be a duplicate
+		checkForDuplicateIssueResult: &repository.DuplicateCheckResult{
+			IsDuplicate:   false,
+			ExistingIssue: nil,
+		},
+		checkForDuplicateIssueResultError: nil,
+		// Issue should get created without any...issues.
+		createIssueResult: expectedIssue,
+		createIssueError:  nil,
+	}
+
+	handler := setupTestWebhookHandler(mockService)
+	router := setupTestWebhookRouter(handler)
+
+	// Create request body
+	reqBody, err := json.Marshal(pipelineFailureRequest)
+	if err != nil {
+		t.Fatalf("Failed to marshal request: %v", err)
+	}
+
+	// Make request
+	req, err := net_http.NewRequest("POST", "/webhooks/pipeline-failure", bytes.NewBuffer(reqBody))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	w := net_httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != net_http.StatusCreated {
+		t.Errorf("expected status 201, got %d", w.Code)
+	}
+
+	var response map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("Failed to parse response: %v", err)
+	}
+
+	expectedStatus := "success"
+	if response["status"] != expectedStatus {
+		t.Errorf("expected response with status '%s', got '%s'", expectedStatus, response["status"])
+	}
+
+	// Convert response data to JSON
+	issueData, err := json.Marshal(response["issue"])
+	if err != nil {
+		t.Fatalf("Failed to marshal issue data: %v", err)
+	}
+
+	// Convert JSON to struct
+	var createdIssue models.Issue
+	err = json.Unmarshal(issueData, &createdIssue)
+	if err != nil {
+		t.Fatalf("Failed to parse response: %v", err)
+	}
+
+	// Compare the issue created to the expected issue
+	err = testhelpers.CompareIssues(createdIssue, *expectedIssue)
+	if err != nil {
+		t.Errorf("issue comparison failed: %v", err)
+	}
+}
