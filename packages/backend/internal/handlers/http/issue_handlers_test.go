@@ -294,3 +294,43 @@ func TestIssueHandler_CreateIssue_Success(t *testing.T) {
 		t.Errorf("epxected ID '%s', got '%s'", createdIssue.ID, response.ID)
 	}
 }
+
+func TestIssueHandler_CreateIssue_InvalidRequest(t *testing.T) {
+	mockService := &MockIssueService{}
+	handler := setupTestHandler(mockService)
+	router := setupTestRouter(handler)
+
+	// Create invalid request with missing required fields
+	invalidRequest := map[string]interface{}{
+		"title": "Test Issue",
+	}
+
+	reqBody, err := json.Marshal(invalidRequest)
+	if err != nil {
+		t.Fatalf("Failed to marshal request: %v", err)
+	}
+
+	req, err := net_http.NewRequest("POST", "/api/v1/issues", bytes.NewBuffer(reqBody))
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	w := net_httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != net_http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+
+	var response map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatalf("Failed to parse response: %v", err)
+	}
+
+	if response["error"] == nil {
+		t.Error("expected error message in response")
+	}
+}
