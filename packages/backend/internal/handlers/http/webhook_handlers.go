@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/konflux-ci/kite/internal/handlers/dto"
 	"github.com/konflux-ci/kite/internal/models"
 	"github.com/konflux-ci/kite/internal/services"
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
 type WebhookHandler struct {
-	issueService *services.IssueService // IssueService instance
-	logger       *logrus.Logger         // Logging Instance
+	issueService services.IssueServiceInterface // IssueService instance
+	logger       *logrus.Logger                 // Logging Instance
 }
 
 // NewWebhookHandler returns a new handler for the webhooks route
-func NewWebhookHandler(issueService *services.IssueService, logger *logrus.Logger) *WebhookHandler {
+func NewWebhookHandler(issueService services.IssueServiceInterface, logger *logrus.Logger) *WebhookHandler {
 	return &WebhookHandler{
 		issueService: issueService,
 		logger:       logger,
@@ -42,7 +42,7 @@ func (h *WebhookHandler) PipelineFailure(c *gin.Context) {
 	var req PipelineFailureRequest
 	// Check if the request binds to proper JSON, in the format specified
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fileds", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields", "details": err.Error()})
 		return
 	}
 

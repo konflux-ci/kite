@@ -104,7 +104,9 @@ func (i *issueRepository) FindAll(ctx context.Context, filters IssueQueryFilters
 	}
 	if filters.Search != "" {
 		searchPattern := "%" + filters.Search + "%"
-		query = query.Where("title ILIKE ? OR description ILIKE ?", searchPattern, searchPattern)
+		// Use LIKE instead of ILIKE for portability.
+		// Use LOWER to prevent any case sensitivity issues
+		query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?)", searchPattern, searchPattern)
 	}
 
 	// Get total count for pagination
@@ -193,13 +195,13 @@ func (i *issueRepository) Create(ctx context.Context, req dto.CreateIssueRequest
 		Description: req.Description,
 		Severity:    req.Severity,
 		IssueType:   req.IssueType,
-		State:       req.State,
+		State:       state,
 		DetectedAt:  now,
 		Namespace:   req.Namespace,
 		Scope: models.IssueScope{
 			ResourceType:      req.Scope.ResourceType,
 			ResourceName:      req.Scope.ResourceName,
-			ResourceNamespace: req.Scope.ResourceNamespace,
+			ResourceNamespace: resourceNamespace,
 		},
 	}
 
@@ -357,10 +359,34 @@ func (i *issueRepository) Delete(ctx context.Context, id string) error {
 func (i *issueRepository) ResolveByScope(ctx context.Context, resourceType, resourceName, namespace string) (int64, error) {
 	now := time.Now()
 
-	result := i.db.WithContext(ctx).Model(&models.Issue{}).
+	// Get the IDs of all issues meeting this criteria
+	var ids []string
+	q := i.db.WithContext(ctx).Model(&models.Issue{}).
 		Joins("JOIN issue_scopes ON issues.scope_id = issue_scopes.id").
 		Where("issues.state = ? AND issues.namespace = ?", models.IssueStateActive, namespace).
 		Where("issue_scopes.resource_type = ? AND issue_scopes.resource_name = ?", resourceType, resourceName).
+		Pluck("issues.id", &ids)
+
+	// Check for error in query
+	if q.Error != nil {
+		return 0, fmt.Errorf("failed to query issue IDs to resolve: %w", q.Error)
+	}
+
+	// Check if any issues were found
+	if len(ids) == 0 {
+		i.logger.WithFields(logrus.Fields{
+			"resource_type": resourceType,
+			"resource_name": resourceName,
+			"namespace":     namespace,
+		}).Info("No active issues found for scope")
+		return 0, nil
+	}
+
+	// Update issues by ID
+	result := i.db.
+		WithContext(ctx).
+		Model(&models.Issue{}).
+		Where("id IN ?", ids).
 		Updates(map[string]any{
 			"state":       models.IssueStateResolved,
 			"resolved_at": &now,

@@ -1,0 +1,66 @@
+name: Go CI Checks
+
+on:
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  ci:
+    name: Run Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/backend
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Run go mod tidy
+        run: |
+          go mod tidy
+          result="$(git diff --exit-code)"
+          if [ -n "$result" ]; then
+            echo "Please run go mod tidy and commit changes"
+            echo "$result"
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: |
+          go vet ./...
+
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.1
+          working-directory: packages/backend
+     
+      - name: Run go fmt
+        run: |
+          # Check if any files need formatting
+          FILES=$(gofmt -l .)
+          # Print any files needing formatting
+          if [ -n "$FILES" ]; then
+            echo "The following files need formatting:"
+            echo "$FILES"
+          exit 1
+          fi
+
+      - name: Run go build
+        run: |
+          go build ./...
+
+      - name: Run go install
+        run: |
+          go install ./...
+
+      - name: Run go tests
+        run: |
+          go test -v ./internal/...
+
