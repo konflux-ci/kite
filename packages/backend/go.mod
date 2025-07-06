@@ -17,7 +17,7 @@ require (
 )
 
 require (
-	ariga.io/atlas-go-sdk v0.6.8 // indirect
+	ariga.io/atlas-go-sdk v0.7.2 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
