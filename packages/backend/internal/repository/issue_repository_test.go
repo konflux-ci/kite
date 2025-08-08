@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/konflux-ci/kite/internal/handlers/dto"
 	"github.com/konflux-ci/kite/internal/models"
@@ -11,9 +13,18 @@ import (
 	"gorm.io/gorm"
 )
 
+type SetupOptions struct {
+	UseConcurrentDatabase bool // Use a concurrent database setup
+}
+
 // setupTestScenario sets up a context and repository for test scenarios
-func setupTestScenario(t *testing.T) (context.Context, *gorm.DB, IssueRepository) {
-	db := testhelpers.SetupTestDB(t)
+func setupTestScenario(t *testing.T, options SetupOptions) (context.Context, *gorm.DB, IssueRepository) {
+	var db *gorm.DB
+	if options.UseConcurrentDatabase {
+		db = testhelpers.SetupConcurrentTestDB(t)
+	} else {
+		db = testhelpers.SetupTestDB(t)
+	}
 	logger := logrus.New()
 	repo := NewIssueRepository(db, logger)
 	ctx := context.Background()
@@ -45,7 +56,7 @@ func createTestIssue(title, namespace string) dto.CreateIssueRequest {
 
 func TestIssueRepository_Create(t *testing.T) {
 	// Setup
-	ctx, db, repo := setupTestScenario(t)
+	ctx, db, repo := setupTestScenario(t, SetupOptions{})
 
 	// Test issue data
 	req := createTestIssue("Test Issue", "test-namespace")
@@ -73,7 +84,7 @@ func TestIssueRepository_Create(t *testing.T) {
 
 func TestIssueRepository_FindByID(t *testing.T) {
 	// Setup
-	ctx, _, repo := setupTestScenario(t)
+	ctx, _, repo := setupTestScenario(t, SetupOptions{})
 
 	// Create a test issue first
 	req := createTestIssue("Find Test Issue", "test-namespace")
@@ -90,8 +101,9 @@ func TestIssueRepository_FindByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error, got: %v", err)
 	}
+
 	if foundIssue == nil {
-		t.Fatalf("Expected issue to be found, got nil")
+		t.Fatal("Expected issue to be found, got nil")
 	}
 
 	// Verify
@@ -103,7 +115,7 @@ func TestIssueRepository_FindByID(t *testing.T) {
 
 func TestIssueRepository_FindByID_NotFound(t *testing.T) {
 	// Setup
-	ctx, _, repo := setupTestScenario(t)
+	ctx, _, repo := setupTestScenario(t, SetupOptions{})
 	// Try to find non-existent issue
 	foundIssue, err := repo.FindByID(ctx, "does-not-exist")
 
@@ -119,7 +131,7 @@ func TestIssueRepository_FindByID_NotFound(t *testing.T) {
 
 func TestIssueRepository_FindAll_WithFilters(t *testing.T) {
 	// Setup
-	ctx, _, repo := setupTestScenario(t)
+	ctx, _, repo := setupTestScenario(t, SetupOptions{})
 
 	// Create test issues
 	issues := []dto.CreateIssueRequest{
@@ -178,7 +190,7 @@ func TestIssueRepository_FindAll_WithFilters(t *testing.T) {
 
 func TestIssueRepository_CheckDuplicate(t *testing.T) {
 	// Setup
-	ctx, _, repo := setupTestScenario(t)
+	ctx, _, repo := setupTestScenario(t, SetupOptions{})
 
 	// Create an issue
 	req := createTestIssue("Duplicate Test", "test-namespace")
@@ -188,25 +200,21 @@ func TestIssueRepository_CheckDuplicate(t *testing.T) {
 	}
 
 	// Check for duplicates with the same properties
-	result, err := repo.CheckDuplicate(ctx, req)
+	foundIssue, err := repo.FindDuplicate(ctx, req)
 
 	// Verify
 	if err != nil {
 		t.Fatalf("Unexpected error, got %v", err)
 	}
 
-	if !result.IsDuplicate {
-		t.Error("Expected issue to be a duplicate")
-	}
-
-	if result.ExistingIssue == nil {
-		t.Error("Expected existing issue to be returned")
+	if foundIssue == nil {
+		t.Fatal("Expected duplicate issue to be returned")
 	}
 }
 
 func TestIssueRepository_Update(t *testing.T) {
 	// Setup
-	ctx, _, repo := setupTestScenario(t)
+	ctx, _, repo := setupTestScenario(t, SetupOptions{})
 
 	// Create an issue
 	req := createTestIssue("Some Issue", "test-namespace")
@@ -220,7 +228,7 @@ func TestIssueRepository_Update(t *testing.T) {
 	expectedTitle := "Updated Issue"
 
 	updatedIssueReq := dto.UpdateIssueRequest{
-		Title: &expectedTitle,
+		Title: expectedTitle,
 	}
 	// Update
 	updatedIssue, err := repo.Update(ctx, expectedID, updatedIssueReq)
@@ -244,7 +252,7 @@ func TestIssueRepository_Update(t *testing.T) {
 }
 
 func TestIssueRepository_Delete(t *testing.T) {
-	ctx, db, repo := setupTestScenario(t)
+	ctx, db, repo := setupTestScenario(t, SetupOptions{})
 
 	// Create issue with links
 	req := createTestIssue("Delete Test", "test-namespace")
@@ -291,5 +299,67 @@ func TestIssueRepository_Delete(t *testing.T) {
 
 	if linkCount != 0 {
 		t.Errorf("Expected 0 links after delete, got %d", linkCount)
+	}
+}
+
+func TestIssueRepository_CreateOrUpdate_NoDuplicates(t *testing.T) {
+	// Setup
+	ctx, _, repo := setupTestScenario(t, SetupOptions{
+		UseConcurrentDatabase: true,
+	})
+
+	// Create issue
+	req := createTestIssue("CreateOrUpdate Test", "test-namespace")
+
+	// Number of concurrent requests
+	numGoroutines := 10
+	// Lets create a WaitGroup and wait for all
+	// goroutines to finish making requests.
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	// Store all returned issues
+	issues := make([]*models.Issue, numGoroutines)
+	errors := make([]error, numGoroutines)
+
+	// Launch concurrent CreateOrUpdate operations
+	for i := 0; i < numGoroutines; i++ {
+		// Launch this in a goroutine
+		go func(index int) {
+			defer wg.Done()
+
+			// Add a small, random delay to increase chance of race condition.
+			//
+			// Without the delay: the goroutines would most likely execute sequentially.
+			// With Delay: they're more likely to be in different phases of operation
+			// at the same time, which is when race conditions occur.
+			//
+			// Index%3 creates: 0, 1, 2, 0, etc ...
+			// So delays are: 0ms, 1ms, 2ms, 0ms, etc ...
+			// This creates three waves of goroutines, each in some delay (0ms, 1ms, 2ms)
+			time.Sleep(time.Millisecond * time.Duration(index%3))
+
+			issue, err := repo.CreateOrUpdate(ctx, req)
+			issues[index] = issue
+			errors[index] = err
+		}(i)
+	}
+	// Wait for all goroutines to complete
+	wg.Wait()
+	// Ensure that all issues returned are the same issue.
+	// This means that no duplicates should have been created
+	// with the same request payload.
+	expectedID := issues[0].ID
+	for _, issue := range issues {
+		if issue.ID != expectedID {
+			t.Fatalf("Expected all issues to have ID %s, got %s", expectedID, issue.ID)
+		}
+	}
+
+	// There should be no errors reported.
+	for _, err := range errors {
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
 	}
 }

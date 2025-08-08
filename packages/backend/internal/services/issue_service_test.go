@@ -340,20 +340,16 @@ func TestIssueService_CheckForDuplicates(t *testing.T) {
 		t.Errorf("unexpected error, got: %v", err)
 	}
 
-	result, err := service.CheckForDuplicateIssue(ctx, req)
+	foundIssue, err := service.FindDuplicateIssue(ctx, req)
 	if err != nil {
 		t.Errorf("unexpected error, got: %v", err)
 	}
 
-	if !result.IsDuplicate {
-		t.Error("expected duplicate to be found")
+	if foundIssue == nil {
+		t.Fatal("expected duplicate to be found")
 	}
 
-	if result.ExistingIssue == nil {
-		t.Error("expected existing issue to be found")
-	}
-
-	if result.ExistingIssue.ID != issue.ID {
-		t.Errorf("expected issue with id '%s', got '%s'", result.ExistingIssue.ID, issue.ID)
+	if foundIssue.ID != issue.ID {
+		t.Errorf("expected issue with id '%s', got '%s'", foundIssue.ID, issue.ID)
 	}
 }

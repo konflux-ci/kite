@@ -8,16 +8,17 @@ import (
 )
 
 type IssueRepository interface {
-	Create(ctx context.Context, req dto.CreateIssueRequest) (*models.Issue, error)
+	Create(ctx context.Context, req dto.IssuePayload) (*models.Issue, error)
 	FindByID(ctx context.Context, id string) (*models.Issue, error)
-	Update(ctx context.Context, id string, updates dto.UpdateIssueRequest) (*models.Issue, error)
+	Update(ctx context.Context, id string, updates dto.IssuePayload) (*models.Issue, error)
 	Delete(ctx context.Context, id string) error
 	// TODO - move IssueQueryFilters somewhere else
 	FindAll(ctx context.Context, filters IssueQueryFilters) ([]models.Issue, int64, error)
-	CheckDuplicate(ctx context.Context, req dto.CreateIssueRequest) (*DuplicateCheckResult, error)
+	FindDuplicate(ctx context.Context, req dto.IssuePayload) (*models.Issue, error)
 	ResolveByScope(ctx context.Context, resourceType, resourceName, namespace string) (int64, error)
 	AddRelatedIssue(ctx context.Context, sourceID, targetID string) error
 	RemoveRelatedIssue(ctx context.Context, sourceID, targetID string) error
+	CreateOrUpdate(ctx context.Context, req dto.IssuePayload) (*models.Issue, error)
 }
 
 type LinkRepository interface {

@@ -10,19 +10,21 @@ import (
 
 // MockIssueService is a mock implementation for testing handlers
 type MockIssueService struct {
-	findIssueResults                  *dto.IssueResponse
-	findIssuesError                   error
-	findIssueByIDResult               *models.Issue
-	findIssueByIDError                error
-	createIssueResult                 *models.Issue
-	createIssueError                  error
-	deleteIssueError                  error
-	updateIssueResult                 *models.Issue
-	updateIssueError                  error
-	checkForDuplicateIssueResult      *repository.DuplicateCheckResult
-	checkForDuplicateIssueResultError error
-	resolveIssuesByScopeResult        int64
-	resolveIssuesByScopeError         error
+	findIssueResults              *dto.IssueResponse
+	findIssuesError               error
+	findIssueByIDResult           *models.Issue
+	findIssueByIDError            error
+	createIssueResult             *models.Issue
+	createIssueError              error
+	deleteIssueError              error
+	updateIssueResult             *models.Issue
+	updateIssueError              error
+	findDuplicateIssueResult      *models.Issue
+	findDuplicateIssueResultError error
+	resolveIssuesByScopeResult    int64
+	resolveIssuesByScopeError     error
+	createOrUpdateIssueResult     *models.Issue
+	createOrUpdateIssueError      error
 }
 
 func (m *MockIssueService) FindIssues(ctx context.Context, filters repository.IssueQueryFilters) (*dto.IssueResponse, error) {
@@ -45,8 +47,12 @@ func (m *MockIssueService) DeleteIssue(ctx context.Context, id string) error {
 	return m.deleteIssueError
 }
 
-func (m *MockIssueService) CheckForDuplicateIssue(ctx context.Context, req dto.CreateIssueRequest) (*repository.DuplicateCheckResult, error) {
-	return m.checkForDuplicateIssueResult, m.checkForDuplicateIssueResultError
+func (m *MockIssueService) FindDuplicateIssue(ctx context.Context, req dto.CreateIssueRequest) (*models.Issue, error) {
+	return m.findDuplicateIssueResult, m.findDuplicateIssueResultError
+}
+
+func (m *MockIssueService) CreateOrUpdateIssue(ctx context.Context, req dto.CreateIssueRequest) (*models.Issue, error) {
+	return m.createOrUpdateIssueResult, m.findDuplicateIssueResultError
 }
 
 func (m *MockIssueService) ResolveIssuesByScope(ctx context.Context, resourceType, resourceName, namespace string) (int64, error) {

@@ -39,12 +39,23 @@ func NewIssueService(repo repository.IssueRepository, logger *logrus.Logger) *Is
 }
 
 // CheckForDuplicateIssue checks if a similar issue already exists
-func (s *IssueService) CheckForDuplicateIssue(ctx context.Context, req dto.CreateIssueRequest) (*repository.DuplicateCheckResult, error) {
-	res, err := s.repo.CheckDuplicate(ctx, req)
+func (s *IssueService) FindDuplicateIssue(ctx context.Context, req dto.CreateIssueRequest) (*models.Issue, error) {
+	issueFound, err := s.repo.FindDuplicate(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	return issueFound, nil
+}
+
+// CreateOrUpdateIssue creates an issue if a duplicate is not found and updates the record if it is.
+//
+// NOTE: This method is mainly used for webhook endpoints.
+func (s *IssueService) CreateOrUpdateIssue(ctx context.Context, req dto.CreateIssueRequest) (*models.Issue, error) {
+	issue, err := s.repo.CreateOrUpdate(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return issue, nil
 }
 
 // FindIssues retrieves issues with optional filters
@@ -71,7 +82,7 @@ func (s *IssueService) FindIssueByID(ctx context.Context, id string) (*models.Is
 	return issue, nil
 }
 
-// CreateIssue creates a new issue
+// CreateIssue creates a new issue if a duplicate is not found and updates the record if it is.
 func (s *IssueService) CreateIssue(ctx context.Context, req dto.CreateIssueRequest) (*models.Issue, error) {
 	issue, err := s.repo.Create(ctx, req)
 	if err != nil {

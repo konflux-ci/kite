@@ -224,8 +224,8 @@ func (h *IssueHandler) ResolveIssue(c *gin.Context) {
 	now := time.Now()
 	state := models.IssueStateResolved
 	req := dto.UpdateIssueRequest{
-		State:      &state,
-		ResolvedAt: &now,
+		State:      state,
+		ResolvedAt: now,
 	}
 
 	updatedIssue, err := h.issueService.UpdateIssue(c.Request.Context(), id, req)

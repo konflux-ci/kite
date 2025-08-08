@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/konflux-ci/kite/internal/models"
-	"github.com/konflux-ci/kite/internal/repository"
 	"github.com/konflux-ci/kite/internal/testhelpers"
 	"github.com/sirupsen/logrus"
 )
@@ -65,14 +64,11 @@ func TestWebhookHandler_PipelineFailure(t *testing.T) {
 
 	mockService := &MockIssueService{
 		// This should not be a duplicate
-		checkForDuplicateIssueResult: &repository.DuplicateCheckResult{
-			IsDuplicate:   false,
-			ExistingIssue: nil,
-		},
-		checkForDuplicateIssueResultError: nil,
+		findDuplicateIssueResult:      nil,
+		findDuplicateIssueResultError: nil,
 		// Issue should get created without any...issues.
-		createIssueResult: expectedIssue,
-		createIssueError:  nil,
+		createOrUpdateIssueResult: expectedIssue,
+		createOrUpdateIssueError:  nil,
 	}
 
 	handler := setupTestWebhookHandler(mockService)
