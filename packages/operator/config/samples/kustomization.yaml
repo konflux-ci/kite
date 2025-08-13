@@ -1,0 +1,4 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- tekton_v1_pipelinerun.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
