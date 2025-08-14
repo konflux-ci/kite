@@ -1,0 +1,97 @@
+{
+    "apiVersion": "tekton.dev/v1",
+    "kind": "PipelineRun",
+    "metadata": {
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"tekton.dev/v1\",\"kind\":\"PipelineRun\",\"metadata\":{\"annotations\":{},\"labels\":{\"backstage.io/kubernetes-id\":\"rhtap\",\"tekton.dev/pipeline\":\"simple-pipeline\"},\"name\":\"simple-pipeline-run\",\"namespace\":\"tekton-pipelines\"},\"spec\":{\"pipelineRef\":{\"name\":\"simple-pipeline\"},\"taskRunTemplate\":{\"serviceAccountName\":\"backstage-tekton\"},\"timeouts\":{\"pipeline\":\"1h0m0s\"}}}\n"
+        },
+        "creationTimestamp": "2025-06-26T15:27:21Z",
+        "generation": 1,
+        "labels": {
+            "backstage.io/kubernetes-id": "rhtap",
+            "tekton.dev/pipeline": "simple-pipeline"
+        },
+        "name": "simple-pipeline-run",
+        "namespace": "tekton-pipelines",
+        "resourceVersion": "62685",
+        "uid": "c507d554-9b2c-437b-bcc0-38e69662c76f"
+    },
+    "spec": {
+        "pipelineRef": {
+            "name": "simple-pipeline"
+        },
+        "taskRunTemplate": {
+            "serviceAccountName": "backstage-tekton"
+        },
+        "timeouts": {
+            "pipeline": "1h0m0s"
+        }
+    },
+    "status": {
+        "childReferences": [
+            {
+                "apiVersion": "tekton.dev/v1",
+                "kind": "TaskRun",
+                "name": "simple-pipeline-run-echo-task",
+                "pipelineTaskName": "echo-task"
+            }
+        ],
+        "completionTime": "2025-06-26T15:27:33Z",
+        "conditions": [
+            {
+                "lastTransitionTime": "2025-06-26T15:27:33Z",
+                "message": "Tasks Completed: 1 (Failed: 0, Cancelled 0), Skipped: 0",
+                "reason": "Succeeded",
+                "status": "True",
+                "type": "Succeeded"
+            }
+        ],
+        "pipelineSpec": {
+            "tasks": [
+                {
+                    "name": "echo-task",
+                    "taskSpec": {
+                        "metadata": {},
+                        "spec": null,
+                        "steps": [
+                            {
+                                "computeResources": {},
+                                "image": "busybox",
+                                "name": "echo-message",
+                                "script": "#!/bin/sh\necho \"Hello, Tekton!\"\n",
+                                "securityContext": {
+                                    "allowPrivilegeEscalation": false,
+                                    "capabilities": {
+                                        "drop": [
+                                            "ALL"
+                                        ]
+                                    },
+                                    "runAsGroup": 3000,
+                                    "runAsNonRoot": true,
+                                    "runAsUser": 1000,
+                                    "seccompProfile": {
+                                        "type": "RuntimeDefault"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "provenance": {
+            "featureFlags": {
+                "awaitSidecarReadiness": true,
+                "coschedule": "workspaces",
+                "enableAPIFields": "beta",
+                "enableProvenanceInStatus": true,
+                "enforceNonfalsifiability": "none",
+                "maxResultSize": 4096,
+                "resultExtractionMethod": "termination-message",
+                "runningInEnvWithInjectedSidecars": true,
+                "verificationNoMatchPolicy": "ignore"
+            }
+        },
+        "startTime": "2025-06-26T15:27:21Z"
+    }
+}
