@@ -9,7 +9,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: operator
-repo: github.com/konflux-ci/kite-bridge-operator
+repo: github.com/konflux-ci/kite/packages/operator
 resources:
 - controller: true
   domain: konflux.dev

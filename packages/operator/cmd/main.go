@@ -26,8 +26,8 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/konflux-ci/kite-bridge-operator/internal/clients"
-	"github.com/konflux-ci/kite-bridge-operator/internal/controller"
+	"github.com/konflux-ci/kite/packages/operator/internal/clients"
+	"github.com/konflux-ci/kite/packages/operator/internal/controller"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

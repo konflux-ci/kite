@@ -1,4 +1,4 @@
-module github.com/konflux-ci/kite-bridge-operator
+module github.com/konflux-ci/kite/packages/operator
 
 go 1.24.0
 

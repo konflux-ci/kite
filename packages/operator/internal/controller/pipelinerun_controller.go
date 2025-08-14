@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	clients "github.com/konflux-ci/kite-bridge-operator/internal/clients"
+	clients "github.com/konflux-ci/kite/packages/operator/internal/clients"
 	"github.com/sirupsen/logrus"
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	"k8s.io/apimachinery/pkg/runtime"
