@@ -66,7 +66,7 @@ var _ = Describe("Manager", Ordered, func() {
 		// _, err = utils.Run(cmd)
 		// Expect(err).NotTo(HaveOccurred(), "Failed to install CRDs")
 
-		var projectImage = "example.com/kite-bridge-operator:v0.0.1"
+		var projectImage = "quay.io/bramos/kite-bridge-operator:v0.0.1"
 
 		By("deploying the controller-manager")
 		cmd = exec.Command("make", "deploy", fmt.Sprintf("IMG=%s", projectImage))
