@@ -3,6 +3,12 @@ name: Tests
 on:
   push:
   pull_request:
+  workflow_call:
+    inputs:
+      workdir:
+        required: false
+        type: string
+        default: packages/operator
 
 jobs:
   test:
@@ -18,6 +24,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Running Tests
+        working-directory: ${{ inputs.workdir }}
         run: |
           go mod tidy
           make test

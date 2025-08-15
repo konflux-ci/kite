@@ -3,6 +3,12 @@ name: E2E Tests
 on:
   push:
   pull_request:
+  workflow_call:
+    inputs:
+      workdir:
+        required: false
+        type: string
+        default: packages/operator
 
 jobs:
   test-e2e:
@@ -27,6 +33,7 @@ jobs:
         run: kind version
 
       - name: Running Test e2e
+        working-directory: ${{ inputs.workdir }}
         run: |
           go mod tidy
           make test-e2e

@@ -3,6 +3,12 @@ name: Lint
 on:
   push:
   pull_request:
+  workflow_call:
+    inputs:
+      workdir:
+        required: false
+        type: string
+        default: packages/operator
 
 jobs:
   lint:
@@ -19,5 +25,6 @@ jobs:
 
       - name: Run linter
         uses: golangci/golangci-lint-action@v8
+        working-directory: ${{ inputs.workdir }}
         with:
           version: v2.1.0

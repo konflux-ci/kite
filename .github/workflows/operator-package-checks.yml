@@ -7,11 +7,19 @@ on:
   pull_request:
     branches: ["**"]
     paths:
-      - 'packages/operator'
+      - 'packages/operator/**'
 jobs:
   test:
     uses: ./packages/operator/.github/workflows/test.yml
+    with:
+      workdir: packages/operator
+
   lint:
     uses: ./packages/operator/.github/workflows/lint.yml
+    with:
+      workdir: packages/operator
+
   test-e2e:
     uses: ./packages/operator/.github/workflows/test-e2e.yml
+    with:
+      workdir: packages/operator
