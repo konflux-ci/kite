@@ -9,16 +9,16 @@ on:
       - 'packages/operator/**'
 jobs:
   test:
-    uses: ./.github/workflows/operator-test.yml
+    uses: ./operator-test.yml
     with:
       workdir: packages/operator
 
   lint:
-    uses: ./.github/workflows/operator-lint.yml
+    uses: ./operator-lint.yml
     with:
       workdir: packages/operator
 
   test-e2e:
-    uses: ./.github/workflows/operator-test-e2e.yml
+    uses: ./operator-test-e2e.yml
     with:
       workdir: packages/operator
