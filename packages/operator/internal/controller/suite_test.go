@@ -17,9 +17,11 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"context"
 	"go/build"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -66,7 +68,14 @@ var _ = BeforeSuite(func() {
 	// Get the CRDs stored in the Go module cache.
 	// You can verify this with: ls $(go env GOPATH)/pkg/mod/github.com/tektoncd/pipeline@v0.69.1/config/300-crds/
 	pipelineDepVersion := "v0.69.1"
-	tektonCRDPath := filepath.Join(build.Default.GOPATH, "pkg", "mod", "github.com", "tektoncd", "pipeline@"+pipelineDepVersion, "config", "300-crds")
+	// Resolve module cache reliably instead of build.Default.GOPATH
+	// This allows us to use the tests in the Github workflow CI
+	modCache := goEnv("GOMODCACHE")
+	tektonCRDPath := filepath.Join(modCache, "github.com", "tektoncd", "pipeline@"+pipelineDepVersion, "config", "300-crds")
+
+	// Log CRD path for debugging
+	logf.Log.Info("Using Tekton CRD path", "path", tektonCRDPath)
+
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "..", "config", "crd", "bases"),
@@ -85,8 +94,8 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	// Add Tekton types
-	tektonv1.AddToScheme(scheme.Scheme)
+	// Add Tekton API types in the scheme, verify
+	Expect(tektonv1.AddToScheme(scheme.Scheme)).To(Succeed())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
@@ -121,4 +130,13 @@ func getFirstFoundEnvTestBinaryDir() string {
 		}
 	}
 	return ""
+}
+
+func goEnv(name string) string {
+	cmd := exec.Command("go", "env", name)
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return string(bytes.TrimSpace(out))
 }
