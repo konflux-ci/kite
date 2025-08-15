@@ -60,10 +60,11 @@ var _ = Describe("Manager", Ordered, func() {
 		_, err = utils.Run(cmd)
 		Expect(err).NotTo(HaveOccurred(), "Failed to label namespace with restricted policy")
 
-		By("installing CRDs")
-		cmd = exec.Command("make", "install")
-		_, err = utils.Run(cmd)
-		Expect(err).NotTo(HaveOccurred(), "Failed to install CRDs")
+		// At the time of this writing there aren't any CRDs.
+		// By("installing CRDs")
+		// cmd = exec.Command("make", "install")
+		// _, err = utils.Run(cmd)
+		// Expect(err).NotTo(HaveOccurred(), "Failed to install CRDs")
 
 		var projectImage = "example.com/kite-bridge-operator:v0.0.1"
 
