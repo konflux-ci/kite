@@ -19,7 +19,6 @@ package controller
 import (
 	"bytes"
 	"context"
-	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -81,7 +80,8 @@ var _ = BeforeSuite(func() {
 			filepath.Join("..", "..", "config", "crd", "bases"),
 			tektonCRDPath,
 		},
-		ErrorIfCRDPathMissing: false,
+		// Lets fail if any CRD path is wrong
+		ErrorIfCRDPathMissing: true,
 	}
 
 	// Retrieve the first found binary directory to allow running tests from IDEs
