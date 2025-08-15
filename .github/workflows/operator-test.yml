@@ -22,7 +22,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version-file: ${{ inputs.workdir }}/go.mod
+          cache-dependency-path: ${{ inputs.workdir }}/go.mod
 
       - name: Running Tests
         working-directory: ${{ inputs.workdir }}

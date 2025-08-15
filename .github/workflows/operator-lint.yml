@@ -22,10 +22,11 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version-file: ${{ inputs.workdir }}/go.mod
+          cache-dependency-path: ${{ inputs.workdir }}/go.mod
 
       - name: Run linter
         uses: golangci/golangci-lint-action@v8
-        working-directory: ${{ inputs.workdir }}
         with:
           version: v2.1.0
+          working-directory: ${{ inputs.workdir }}
