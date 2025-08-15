@@ -76,11 +76,26 @@ var _ = BeforeSuite(func() {
 	// Log CRD path for debugging
 	logf.Log.Info("Using Tekton CRD path", "path", tektonCRDPath)
 
+	// Build CRDs dir list only if the path exists and has files
+
+	// Local
+	localCRDs := filepath.Join("..", "..", "config", "crd", "bases")
+	var crdDirs []string
+	if existingNonEmptyDir(localCRDs) {
+		crdDirs = append(crdDirs, localCRDs)
+	} else {
+		logf.Log.Info("Skipping local CRDs (not found or empty)", "path", localCRDs)
+	}
+
+	// Tekton CRDS
+	if existingNonEmptyDir(tektonCRDPath) {
+		crdDirs = append(crdDirs, tektonCRDPath)
+	} else {
+		logf.Log.Info("Could not find Tekton CRD directory", "path", tektonCRDPath)
+	}
+
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{
-			filepath.Join("..", "..", "config", "crd", "bases"),
-			tektonCRDPath,
-		},
+		CRDDirectoryPaths: crdDirs,
 		// Lets fail if any CRD path is wrong
 		ErrorIfCRDPathMissing: true,
 	}
@@ -146,4 +161,13 @@ func goEnv(name string) string {
 func goListModuleVersion(module string) string {
 	out, _ := exec.Command("go", "list", "-m", "-f", "{{.Version}}", module).Output()
 	return strings.TrimSpace(string(out))
+}
+
+func existingNonEmptyDir(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || !info.IsDir() {
+		return false
+	}
+	entries, err := os.ReadDir(path)
+	return err == nil && len(entries) > 0
 }
