@@ -102,7 +102,7 @@ var _ = Describe("PipelineRun Controller", func() {
 
 	Context("When a PipelineRun fails", func() {
 		var (
-			prName    = "failed-pipeline-run"
+			prName    = "failed-pipeline-xyz"
 			lookupKey = types.NamespacedName{Name: prName, Namespace: KiteBridgeOperatorNamespace}
 			pr        = &v1.PipelineRun{}
 		)
@@ -119,7 +119,7 @@ var _ = Describe("PipelineRun Controller", func() {
 					},
 				},
 				Labels: map[string]string{
-					"tekton.dev/pipeline": "simple-pipeline",
+					"tekton.dev/pipeline": "failed-pipeline",
 				},
 				CompletionTime: &now,
 			})
@@ -144,11 +144,61 @@ var _ = Describe("PipelineRun Controller", func() {
 			failureReport := mockKiteClient.FailureReports[0]
 
 			// Verify PR has what we expect
-			Expect(failureReport.PipelineName).To(Equal("simple-pipeline"))
+			Expect(failureReport.PipelineName).To(Equal("failed-pipeline"))
 			Expect(failureReport.Namespace).To(Equal(KiteBridgeOperatorNamespace))
 			Expect(failureReport.FailureReason).To(ContainSubstring("Tasks Completed"))
 			Expect(failureReport.RunID).To(Equal(string(pr.UID)))
 			Expect(failureReport.Severity).To(Equal("major"))
+		})
+	})
+
+	Context("When a PipelineRun succeeds", func() {
+		var (
+			prName    = "successful-pipeline-xyz"
+			lookupKey = types.NamespacedName{Name: prName, Namespace: KiteBridgeOperatorNamespace}
+			pr        = &v1.PipelineRun{}
+		)
+
+		BeforeEach(func() {
+			now := metav1.Now()
+			setupPipelineRun(prName, PipelineRunBuilderOptions{
+				Conditions: []knative.Condition{
+					{
+						Type:    "Succeeded",
+						Message: "1 (Failed: 0, Cancelled 0), Skipped: 0",
+						Status:  "True",
+						Reason:  "Succeeded",
+					},
+				},
+				Labels: map[string]string{
+					"tekton.dev/pipeline": "successful-pipeline",
+				},
+				CompletionTime: &now,
+			})
+
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, lookupKey, pr)).To(Succeed())
+			}).Should(Succeed())
+		})
+
+		It("Should successfully reconcile the PipelineRun if it succeeds", func() {
+			// Trigger reconciliation
+			result, err := reconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: lookupKey,
+			})
+
+			// Verify reconciliation
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(ctrl.Result{}))
+
+			// Verify KITE client was called for success
+			Expect(mockKiteClient.SuccessReports).To(HaveLen(1))
+			successfulPayload := mockKiteClient.SuccessReports[0]
+
+			// Verify PR is what we expect
+			Expect(successfulPayload.PipelineName).To(Equal("successful-pipeline"))
+			Expect(successfulPayload.Namespace).To(Equal(KiteBridgeOperatorNamespace))
+			Expect(successfulPayload).NotTo(HaveExistingField("FailureReason"))
 		})
 	})
 })
