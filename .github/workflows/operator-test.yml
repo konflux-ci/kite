@@ -1,0 +1,30 @@
+# NOTE: This workflow came from the operator-sdk
+name: Tests
+
+on:
+  workflow_call:
+    inputs:
+      workdir:
+        required: false
+        type: string
+        default: packages/operator
+
+jobs:
+  test:
+    name: Run on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ inputs.workdir }}/go.mod
+          cache-dependency-path: ${{ inputs.workdir }}/go.mod
+
+      - name: Running Tests
+        working-directory: ${{ inputs.workdir }}
+        run: |
+          go mod tidy
+          make test

@@ -1,0 +1,24 @@
+# This workflow triggers the workflows provided by the operator-sdk
+# for the Kite operator package.
+
+name: Operator package checks
+on:
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'packages/operator/**'
+jobs:
+  test:
+    uses: ./.github/workflows/operator-test.yml
+    with:
+      workdir: packages/operator
+
+  lint:
+    uses: ./.github/workflows/operator-lint.yml
+    with:
+      workdir: packages/operator
+
+  test-e2e:
+    uses: ./.github/workflows/operator-test-e2e.yml
+    with:
+      workdir: packages/operator
