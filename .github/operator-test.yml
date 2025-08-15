@@ -1,3 +1,4 @@
+# NOTE: This workflow came from the operator-sdk
 name: Tests
 
 on:
