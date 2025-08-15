@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/konflux-ci/kite/packages/operator/internal/clients"
@@ -41,11 +42,11 @@ func (b *PipelineRunBuilder) Build() *v1.PipelineRun {
 }
 
 func (b *PipelineRunBuilder) WithAnnotations(annotations map[string]string) *PipelineRunBuilder {
-	if b.pr.ObjectMeta.Annotations == nil {
-		b.pr.ObjectMeta.Annotations = make(map[string]string)
+	if b.pr.Annotations == nil {
+		b.pr.Annotations = make(map[string]string)
 	}
 	for key, value := range annotations {
-		b.pr.ObjectMeta.Annotations[key] = value
+		b.pr.Annotations[key] = value
 	}
 	return b
 }
@@ -92,7 +93,7 @@ type MockKiteClient struct {
 // Ensure we're implementing the interface
 var _ clients.KiteWebhookClient = (*MockKiteClient)(nil)
 
-func (m *MockKiteClient) ReportPipelineFailure(payload clients.PipelineFailurePayload) error {
+func (m *MockKiteClient) ReportPipelineFailure(ctx context.Context, payload clients.PipelineFailurePayload) error {
 	m.FailureReports = append(m.FailureReports, payload)
 	if m.ShouldFail {
 		return fmt.Errorf("Failed to report pipeline failure")
@@ -100,7 +101,7 @@ func (m *MockKiteClient) ReportPipelineFailure(payload clients.PipelineFailurePa
 	return nil
 }
 
-func (m *MockKiteClient) ReportPipelineSuccess(payload clients.PipelineSuccessPayload) error {
+func (m *MockKiteClient) ReportPipelineSuccess(ctx context.Context, payload clients.PipelineSuccessPayload) error {
 	m.SuccessReports = append(m.SuccessReports, payload)
 	if m.ShouldFail {
 		return fmt.Errorf("failed to report pipeline success")

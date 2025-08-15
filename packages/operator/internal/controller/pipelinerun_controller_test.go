@@ -70,7 +70,7 @@ func tearDownPipelineRuns() {
 	}
 	Eventually(func() []v1.PipelineRun {
 		return listPipelineRuns(KiteBridgeOperatorNamespace)
-	}).Should(HaveLen(0))
+	}).Should(BeEmpty())
 }
 
 var _ = Describe("PipelineRun Controller", func() {

@@ -2,6 +2,7 @@ package clients
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -14,8 +15,8 @@ import (
 )
 
 type KiteWebhookClient interface {
-	ReportPipelineFailure(payload PipelineFailurePayload) error
-	ReportPipelineSuccess(payload PipelineSuccessPayload) error
+	ReportPipelineFailure(ctx context.Context, payload PipelineFailurePayload) error
+	ReportPipelineSuccess(ctx context.Context, payload PipelineSuccessPayload) error
 }
 type KiteClient struct {
 	baseURL    string
@@ -72,25 +73,25 @@ func NewKiteClient(baseURL string, logger *logrus.Logger) *KiteClient {
 }
 
 // ReportPipelineFailure uses KITE's webhook endpoint for pipeline failures
-func (k *KiteClient) ReportPipelineFailure(payload PipelineFailurePayload) error {
+func (k *KiteClient) ReportPipelineFailure(ctx context.Context, payload PipelineFailurePayload) error {
 	url := fmt.Sprintf("%s/api/v1/webhooks/pipeline-failure?namespace=%s", k.baseURL, payload.Namespace)
-	return k.sendWebhook(url, payload, "pipeline-failure")
+	return k.sendWebhook(ctx, url, payload, "pipeline-failure")
 }
 
 // ReportPipelineSuccess uses KITE's webhook endpoint for pipeline success
-func (k *KiteClient) ReportPipelineSuccess(payload PipelineSuccessPayload) error {
+func (k *KiteClient) ReportPipelineSuccess(ctx context.Context, payload PipelineSuccessPayload) error {
 	url := fmt.Sprintf("%s/api/v1/webhooks/pipeline-success?namespace=%s", k.baseURL, payload.Namespace)
-	return k.sendWebhook(url, payload, "pipeline-success")
+	return k.sendWebhook(ctx, url, payload, "pipeline-success")
 }
 
 // sendWebhook is a helper function that sends HTTP requests to KITE
-func (k *KiteClient) sendWebhook(url string, payload interface{}, operation string) error {
+func (k *KiteClient) sendWebhook(ctx context.Context, url string, payload interface{}, operation string) error {
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("Failed to marshal payload: %v", err)
+		return fmt.Errorf("failed to marshal payload: %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		k.logger.WithError(err).Error("Failed to create HTTP request")
 		return fmt.Errorf("failed to create request: %v", err)
@@ -109,14 +110,19 @@ func (k *KiteClient) sendWebhook(url string, payload interface{}, operation stri
 		k.logger.WithError(err).Error("Failed to send request to KITE")
 		return fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			k.logger.WithError(cerr).Error("Failed to close body of the reponse")
+		}
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		k.logger.WithFields(logrus.Fields{
 			"status_code": resp.StatusCode,
 			"operation":   operation,
 		}).Errorf("KITE API returned status %d", resp.StatusCode)
-		return fmt.Errorf("Error, Status code %d returned", resp.StatusCode)
+		return fmt.Errorf("error, Status code %d returned", resp.StatusCode)
 	}
 
 	k.logger.WithFields(logrus.Fields{

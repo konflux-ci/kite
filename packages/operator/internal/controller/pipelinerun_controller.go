@@ -39,6 +39,12 @@ type PipelineRunReconciler struct {
 	Logger     *logrus.Logger
 }
 
+const (
+	ConditionTypeSuccess = "Succeeded"
+	RunPassed            = "True"
+	RunFailed            = "False"
+)
+
 // +kubebuilder:rbac:groups=tekton.konflux.dev,resources=pipelineruns,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=tekton.konflux.dev,resources=pipelineruns/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=tekton.konflux.dev,resources=pipelineruns/finalizers,verbs=update
@@ -107,7 +113,7 @@ func (r *PipelineRunReconciler) handlePipelineRunFailure(ctx context.Context, pr
 	}
 
 	// In the event of failure, retry in x minutes
-	if err := r.KiteClient.ReportPipelineFailure(payload); err != nil {
+	if err := r.KiteClient.ReportPipelineFailure(ctx, payload); err != nil {
 		r.Logger.WithError(err).WithFields(logrus.Fields{
 			"id":           pr.UID,
 			"pipeline_run": pr.Name,
@@ -137,7 +143,7 @@ func (r *PipelineRunReconciler) handlePipelineRunSuccess(ctx context.Context, pr
 	}
 
 	// In the event of failure, retry in x minutes
-	if err := r.KiteClient.ReportPipelineSuccess(payload); err != nil {
+	if err := r.KiteClient.ReportPipelineSuccess(ctx, payload); err != nil {
 		r.Logger.WithError(err).WithFields(logrus.Fields{
 			"id":           pr.UID,
 			"pipeline_run": pr.Name,
@@ -175,11 +181,11 @@ func (p *PipelineRunReconciler) getPipelineRunStatus(pr *v1.PipelineRun) string 
 
 	for _, condition := range pr.Status.Conditions {
 		// Only check completed conditions
-		if condition.Type == "Succeeded" {
+		if condition.Type == ConditionTypeSuccess {
 			switch condition.Status {
-			case "True":
+			case RunPassed:
 				return "succeeded"
-			case "False":
+			case RunFailed:
 				return "failed"
 			}
 		}
@@ -216,7 +222,7 @@ func (r *PipelineRunReconciler) getFailureReason(ctx context.Context, pr *v1.Pip
 	if pr.Status.Conditions != nil {
 		for _, condition := range pr.Status.Conditions {
 			// If PipelineRun ran and failed...
-			if condition.Type == "Succeeded" && condition.Status == "False" {
+			if condition.Type == ConditionTypeSuccess && condition.Status == RunFailed {
 				// Check reasons for failure
 				if condition.Message != "" {
 					return condition.Message
@@ -290,7 +296,7 @@ func (r *PipelineRunReconciler) isTaskRunFailed(status *v1.TaskRunStatus) bool {
 
 	for _, condition := range status.Conditions {
 		// Completed but failed
-		if condition.Type == "Succeeded" && condition.Status == "False" {
+		if condition.Type == ConditionTypeSuccess && condition.Status == RunFailed {
 			return true
 		}
 	}
@@ -304,7 +310,7 @@ func (r *PipelineRunReconciler) getTaskRunFailureReason(status *v1.TaskRunStatus
 
 	for _, condition := range status.Conditions {
 		// Completed but failed
-		if condition.Type == "Succeeded" && condition.Status == "False" {
+		if condition.Type == ConditionTypeSuccess && condition.Status == RunFailed {
 			// Usually the message has more info. If not, fallback to reason
 
 			if condition.Message != "" {
