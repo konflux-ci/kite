@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -66,11 +67,11 @@ var _ = BeforeSuite(func() {
 
 	// Get the CRDs stored in the Go module cache.
 	// You can verify this with: ls $(go env GOPATH)/pkg/mod/github.com/tektoncd/pipeline@v0.69.1/config/300-crds/
-	pipelineDepVersion := "v0.69.1"
+	tektonVersion := goListModuleVersion("github.com/tektoncd/pipeline")
 	// Resolve module cache reliably instead of build.Default.GOPATH
 	// This allows us to use the tests in the Github workflow CI
 	modCache := goEnv("GOMODCACHE")
-	tektonCRDPath := filepath.Join(modCache, "github.com", "tektoncd", "pipeline@"+pipelineDepVersion, "config", "300-crds")
+	tektonCRDPath := filepath.Join(modCache, "github.com", "tektoncd", "pipeline@"+tektonVersion, "config", "300-crds")
 
 	// Log CRD path for debugging
 	logf.Log.Info("Using Tekton CRD path", "path", tektonCRDPath)
@@ -139,4 +140,10 @@ func goEnv(name string) string {
 		return ""
 	}
 	return string(bytes.TrimSpace(out))
+}
+
+// goListModuleVersion gets the version of a Go module.
+func goListModuleVersion(module string) string {
+	out, _ := exec.Command("go", "list", "-m", "-f", "{{.Version}}", module).Output()
+	return strings.TrimSpace(string(out))
 }
