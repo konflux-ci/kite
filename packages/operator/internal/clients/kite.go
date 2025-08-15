@@ -113,7 +113,7 @@ func (k *KiteClient) sendWebhook(ctx context.Context, url string, payload interf
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
-			k.logger.WithError(cerr).Error("Failed to close body of the reponse")
+			k.logger.WithError(cerr).Error("Failed to close body of the response")
 		}
 	}()
 
