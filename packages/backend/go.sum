@@ -1,5 +1,5 @@
-ariga.io/atlas v0.36.2-0.20250801020723-2aaaf0682dd9 h1:VThMXS+2vNPknqRcUD0ufbYybrmq7J+LbsRBx5ZD1sI=
-ariga.io/atlas v0.36.2-0.20250801020723-2aaaf0682dd9/go.mod h1:Ex5l1xHsnWQUc3wYnrJ9gD7RUEzG76P7ZRQp8wNr0wc=
+ariga.io/atlas v0.36.2-0.20250822093652-55bbf76d4d94 h1:Qu5ME2nH1Yd61IQwAfdZ7CmKuaVU40YDoEoLtnxLVh0=
+ariga.io/atlas v0.36.2-0.20250822093652-55bbf76d4d94/go.mod h1:mHE83ptCxEkd3rO3c7Rvkk6Djf6mVhEiSVhoiNu96CI=
 ariga.io/atlas-provider-gorm v0.5.5 h1:KHM9WyNQ3mQrwhHW1l6uCOcPU4Lem93pz0EYhN9zy2M=
 ariga.io/atlas-provider-gorm v0.5.5/go.mod h1:4hm9MJLtjWuyr9wUqhSx7YN72HcWTIT6jb4uexk9zRA=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
