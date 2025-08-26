@@ -40,7 +40,6 @@ simple-pipeline-run   False       Failed   9s          3s
 5. **Observe the Operator logs:**
 You should see the operator detect the failure and report it to Kite.
 ```sh
-
 {"level":"info","msg":"Processing failed PipelineRun","namespace":"default","pipeline_run":"simple-pipeline-run","status":"failed","time":"2025-08-26T09:51:40-04:00"}
 {"level":"info","msg":"Successfully sent request to KITE","operation":"pipeline-failure","status_code":201,"time":"2025-08-26T09:51:40-04:00"}
 {"id":"c7686f52-afae-4180-b719-ae5d66b50379","level":"info","msg":"Successfully reported pipeline failure to KITE","operation":"pipeline-failure","pipeline_run":"simple-pipeline-run","time":"2025-08-26T09:51:40-04:00"}
@@ -99,7 +98,6 @@ simple-pipeline-run-pbwxj   True        Succeeded   32s         28s
 
 10. **Confirm success in the operator logs:**
 ```sh
-
 {"level":"info","msg":"Processing successful PipelineRun","namespace":"default","pipeline_run":"simple-pipeline-run-bzskm","status":"succeeded","time":"2025-08-26T09:52:56-04:00"}
 {"level":"info","msg":"Successfully sent request to KITE","operation":"pipeline-success","status_code":200,"time":"2025-08-26T09:52:56-04:00"}
 {"id":"6d3ba54e-7293-40b0-8db1-ce5ee3b0a7a5","level":"info","msg":"Successfully reported pipeline success to KITE","operation":"pipeline-success","pipeline_run":"simple-pipeline-run-bzskm","time":"2025-08-26T09:52:56-04:00"}
