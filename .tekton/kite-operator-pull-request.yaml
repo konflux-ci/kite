@@ -71,7 +71,7 @@ spec:
       description: Execute the build with network isolation
       name: hermetic
       type: string
-    - default: '[{"type": "gomod", "path": "./packages/operator/"},{"type": "rpm", "path": "."}]'
+    - default: '[{"type": "gomod", "path": "."},{"type": "rpm", "path": "."}]'
       description: Build dependencies to be prefetched
       name: prefetch-input
       type: string
