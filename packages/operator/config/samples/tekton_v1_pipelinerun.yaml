@@ -3,7 +3,7 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: simple-pipeline
-  namespace: tekton-pipelines
+  namespace: default
 spec:
   tasks:
   - name: echo-task
@@ -23,13 +23,13 @@ spec:
         script: |
           #!/bin/sh
           echo "Hello, Tekton!"
-          exit 0
+          exit 1
 ---
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: simple-pipeline-run
-  namespace: tekton-pipelines
+  namespace: default
 spec:
   pipelineRef:
     name: simple-pipeline
