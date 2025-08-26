@@ -32,6 +32,10 @@ spec:
     value: Dockerfile
   - name: path-context
     value: packages/operator
+  - name: hermetic
+    value: "true"
+  - name: prefetch-input
+    value: '[{"type": "gomod", "path": "./packages/operator/"},{"type": "rpm", "path": "."}]'
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
@@ -67,11 +71,11 @@ spec:
       description: Skip checks against built image
       name: skip-checks
       type: string
-    - default: "true"
+    - default: ""
       description: Execute the build with network isolation
       name: hermetic
       type: string
-    - default: '[{"type": "gomod", "path": "./packages/operator/"},{"type": "rpm", "path": "."}]'
+    - default: ""
       description: Build dependencies to be prefetched
       name: prefetch-input
       type: string
