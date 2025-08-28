@@ -91,6 +91,7 @@ See the Roadmap below for a high-level progress overview and plans.
 ### Roadmap
 - [x] Backend API service is built and released through Konflux
 - [x] Backend API service is running on a public staging cluster
-- [ ] **Current** - Bridge Operator is built and released through Konflux
-- [ ] Bridge Operator is live on a public staging cluster
+- [x] Bridge Operator is built and released through Konflux
+- [ ] **Current** - Bridge Operator is live on a public staging cluster
 - [ ] Konflux teams onboard their controllers onto Bridge Operator, generating issues
+- [ ] Controllers can be selected using a configuration, rather than loading all of them
