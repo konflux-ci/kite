@@ -13,7 +13,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.21.0
 )
 
-require go.yaml.in/yaml/v2 v2.4.2 // indirect
+require go.yaml.in/yaml/v2 v2.4.3 // indirect
 
 // Outside of operator-sdk
 require github.com/tektoncd/pipeline v1.3.1
