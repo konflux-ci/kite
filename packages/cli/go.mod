@@ -2,7 +2,7 @@ module github.com/konflux-ci/kite/packages/cli
 
 go 1.23.0
 
-toolchain go1.24.6
+toolchain go1.25.4
 
 require (
 	github.com/fatih/color v1.15.0
