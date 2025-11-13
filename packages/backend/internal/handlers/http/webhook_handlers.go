@@ -71,6 +71,32 @@ type MintmakerRequest struct {
 	Logs       []string `json:"logs"`
 }
 
+// ReleaseFailureRequest represents the payload for a release failure webhook.
+//
+// Fields:
+//   - application :   (string, required) - Name of the Konflux Application that was released. (required)
+//   - namespace:      (string, required) - Kubernetes namespace where the release ran. (required)
+//   - failurePhase:   (string, required) - What phase the Release failed on (managed processing, validation, etc). (required)
+//   - release:        (string, required) - Release Custom Resource Name. (required)
+//   - pipelineRunUrl: (string, optional) - Direct URL to failing pipelineRun logs, if available.
+type ReleaseFailureRequest struct {
+	Application    string `json:"application" binding:"required"`
+	Namespace      string `json:"namespace" binding:"required"`
+	FailurePhase   string `json:"failurePhase" binding:"required"`
+	ReleaseName    string `json:"release" binding:"required"`
+	PipelineRunURL string `json:"pipelineRunUrl"`
+}
+
+// ReleaseSuccessRequest represents the payload for a release success webhook.
+//
+// Fields:
+//   - application:  (string, required) - Name of the Konflux Application that was released.
+//   - namespace:    (string, required) - Kubernetes namespace where the release ran.
+type ReleaseSuccessRequest struct {
+	Application string `json:"application" binding:"required"`
+	Namespace   string `json:"namespace" binding:"required"`
+}
+
 // PipelineFailure handles pipeline failure webhooks with idempotent behavior.
 // If the same issue payload is sent multiple times, only one issue will be created or updated.
 //
@@ -278,5 +304,125 @@ func (h *WebhookHandler) MintmakerIssues(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"issue":  issue,
+	})
+}
+
+// ReleaseFailure handles release failure webhooks with idempotent behavior.
+//
+// Request Body:
+//   - application :   (string, required) - Name of the Konflux Application that was released. (required)
+//   - namespace:      (string, required) - Kubernetes namespace where the release ran. (required)
+//   - failurePhase:   (string, required) - What phase the Release failed on (managed processing, validation, etc). (required)
+//   - release:        (string, required) - Release Custom Resource Name. (required)
+//   - pipelineRunUrl: (string, optional) - Direct URL to failing pipelineRun logs, if available.
+//
+// Response:
+//   - 201 Created: Issue was created or updated successfully
+//   - 400 Bad Request: Missing required fields
+//   - 500 Internal Server Error: Database or processing error
+//
+// Example:
+//
+//		 POST /api/v1/webhooks/release-failure
+//		 Content-Type: application/json
+//			{
+//			  "application": "fancy-app",
+//			  "namespace": "team-alpha",
+//			  "failurePhase": "Validation",
+//	          "release": "release-to-prod-3"
+//			}
+func (h *WebhookHandler) ReleaseFailure(c *gin.Context) {
+	var req ReleaseFailureRequest
+	// Check if the request binds to proper JSON, in the format specified
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields", "details": err.Error()})
+		return
+	}
+
+	description := fmt.Sprintf("The release failed in phase: %s", req.FailurePhase)
+	if req.PipelineRunURL != "" {
+		description = fmt.Sprintf("The release failed in phase: %s. Link to logs: %s", req.FailurePhase, req.PipelineRunURL)
+	}
+
+	issueData := dto.CreateIssueRequest{
+		Title:       fmt.Sprintf("Release %s failed for application %s", req.ReleaseName, req.Application),
+		Description: description,
+		Severity:    models.SeverityMajor,
+		IssueType:   models.IssueTypeRelease,
+		Namespace:   req.Namespace,
+		Scope: dto.ScopeReqBody{
+			ResourceType:      "application",
+			ResourceName:      req.Application,
+			ResourceNamespace: req.Namespace,
+		},
+	}
+
+	// Create or update the issue
+	issue, err := h.issueService.CreateOrUpdateIssue(c, issueData)
+	if err != nil {
+		h.logger.WithError(err).Error("Failed to create or update release issue")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process webhook"})
+		return
+	}
+
+	h.logger.WithField("issue_id", issue.ID).Info("Processed release failure webhook")
+
+	c.JSON(http.StatusCreated, gin.H{
+		"status": "success",
+		"issue":  issue,
+	})
+}
+
+// ReleaseSuccess handles release success webhooks.
+//
+// Request Body:
+//   - application:  (string, required) - Name of the Konflux Application that was released
+//   - namespace:    (string, required) - Namespace where the release ran
+
+// Response:
+//   - 200 OK: Issues related to the application are resolved
+//   - 400 Bad Request: Missing required fields
+//   - 500 Internal Server Error: Database or processing error
+//
+// Issues that match the application name and namespace will be marked as resolved using
+// the scope:
+//   - ResourceName: <application name>
+//   - ResourceType: "application"
+//   - ResourceNamespace: <application namespace>
+//
+// Example:
+//
+//	    Content-Type: application/json
+//		  POST /api/v1/webhooks/release-success
+//			 {
+//			   "application": "fancy-app",
+//			   "namespace": "team-alpha"
+//			 }
+func (h *WebhookHandler) ReleaseSuccess(c *gin.Context) {
+	var req ReleaseSuccessRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields", "details": err.Error()})
+		return
+	}
+
+	// Resolve any active issues for this application
+	resolved, err := h.issueService.ResolveIssuesByScope(c.Request.Context(), "application", req.Application, req.Namespace)
+	if err != nil {
+		h.logger.WithError(err).Errorf("failed to resolve issues for application %s : %v", req.Application, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to resolve application issues",
+		})
+		return
+	}
+
+	h.logger.WithFields(logrus.Fields{
+		"application": req.Application,
+		"namespace":   req.Namespace,
+		"resolved":    resolved,
+	}).Info("Release success webhook processed")
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": fmt.Sprintf("Resolved %d issue(s) for application %s", resolved, req.Application),
 	})
 }
