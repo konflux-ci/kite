@@ -1,8 +1,8 @@
-# Kite :kite:
-
 # STOP :stop_sign:
 
 There is a new repository for this project: https://github.com/Issues-Dashboard/kite
+
+---
 
 ![Go CI Checks](https://github.com/konflux-ci/kite/actions/workflows/go-ci-checks.yaml/badge.svg)
 
