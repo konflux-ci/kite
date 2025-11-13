@@ -1,4 +1,8 @@
-# Konflux Issue Tracking Engine (Kite) :kite:
+# STOP :stop_sign:
+
+There is a new repository for this project: https://github.com/Issues-Dashboard/kite
+
+---
 
 ![Go CI Checks](https://github.com/konflux-ci/kite/actions/workflows/go-ci-checks.yaml/badge.svg)
 
@@ -8,7 +12,7 @@
 
 ## What is Kite?
 
-Kite is a set of components that **detect, create and track issues** that can disrupt applications in Konflux.
+Kite is a set of components that **detect, create and track issues** that can disrupt applications in your cluster.
 
 Typical issues include:
 
@@ -35,7 +39,7 @@ Typical issues include:
 - **REST API**: Integrate with external tools (such as the Issues Dashboard **WIP**).
 - **Extensible Operator**: Add custom controllers to watch cluster resources and open/resolve issues in Kite.
 
-All these components work together to create and track issues that may disrupt your ability to build and deploy applications in Konflux.
+All these components work together to create and track issues that may disrupt your ability to build and deploy applications in your cluster.
 
 ---
 
